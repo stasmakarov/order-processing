@@ -3,6 +3,8 @@
 
     <menu id="application" title="msg://com.company.orderprocessing/menu.application.title" opened="true">
         <item view="ord_User.list" title="msg://com.company.orderprocessing.view.user/UserListView.title"/>
+        <item view="ord_Item.list" title="msg://com.company.orderprocessing.view.item/itemListView.title"/>
+        <item view="ord_Order.list" title="msg://com.company.orderprocessing.view.order/orderListView.title"/>
     </menu>
 
 </menu-config>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://orderDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="orderDc"
+                  class="com.company.orderprocessing.entity.Order">
+            <fetchPlan extends="_instance_name">
+                <property name="customer"/>
+                <property name="address"/>
+                <property name="item" fetchPlan="_instance_name"/>
+                <property name="quantity"/>
+                <property name="status"/>
+                <property name="location"/>
+                <property name="processInstanceId"/>
+            </fetchPlan>
+            <loader id="orderDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="orderDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+            </responsiveSteps>
+            <textField id="idField" property="id"/>
+            <textField id="customerField" property="customer"/>
+            <textField id="addressField" property="address"/>
+            <entityPicker id="itemField" property="item">
+                <actions>
+                    <action id="entityLookup" type="entity_lookup"/>
+                    <action id="entityClear" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <textField id="quantityField" property="quantity"/>
+            <select id="statusField" property="status"/>
+            <textField id="locationField" property="location"/>
+            <textField id="processInstanceIdField" property="processInstanceId"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

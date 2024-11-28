@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view" xmlns:maps="http://jmix.io/schema/maps/ui"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://orderListView.title"
+      focusComponent="ordersDataGrid">
+    <data>
+        <collection id="ordersDc"
+                    class="com.company.orderprocessing.entity.Order">
+            <fetchPlan extends="_instance_name">
+                <property name="address"/>
+                <property name="item" fetchPlan="_instance_name"/>
+                <property name="quantity"/>
+                <property name="location"/>
+                <property name="status"/>
+            </fetchPlan>
+            <loader id="ordersDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from ord_Order e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <genericFilter component="genericFilter"/>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <split id="split" width="100%" themeNames="splitter-spacing" splitterPosition="45">
+            <vbox>
+                <genericFilter id="genericFilter" opened="false"
+                               dataLoader="ordersDl">
+                    <properties include=".*"/>
+                </genericFilter>
+                <hbox id="buttonsPanel" classNames="buttons-panel">
+                    <button id="createButton" action="ordersDataGrid.create"/>
+                    <button id="editButton" action="ordersDataGrid.edit"/>
+                    <button id="refreshButton" action="ordersDataGrid.refresh"/>
+                    <button id="removeButton" action="ordersDataGrid.remove"/>
+                    <simplePagination id="pagination" dataLoader="ordersDl"/>
+                </hbox>
+                <dataGrid id="ordersDataGrid"
+                          width="100%"
+                          minHeight="20em"
+                          dataContainer="ordersDc"
+                          columnReorderingAllowed="true"
+                          selectionMode="MULTI">
+                    <actions>
+                        <action id="create" type="list_create"/>
+                        <action id="edit" type="list_edit"/>
+                        <action id="refresh" type="list_refresh"/>
+                        <action id="remove" type="list_remove"/>
+                    </actions>
+                    <columns resizable="true">
+                        <column property="id"/>
+                        <column property="address"/>
+                        <column property="item"/>
+                        <column property="quantity"/>
+                        <column property="status"/>
+                    </columns>
+                </dataGrid>
+                <hbox id="lookupActions" visible="false">
+                    <button id="selectButton" action="selectAction"/>
+                    <button id="discardButton" action="discardAction"/>
+                </hbox>
+            </vbox>
+            <vbox id="mapBox" width="100%">
+                <maps:geoMap id="map" height="100%" width="100%">
+                    <maps:layers>
+                        <maps:tile>
+                            <maps:osmSource/>
+                        </maps:tile>
+                        <maps:vector id="ordersLayer">
+                            <maps:dataVectorSource id="dataVectorSource"
+                                                   dataContainer="ordersDc"
+                                                   property="location"/>
+                        </maps:vector>
+                    </maps:layers>
+                    <maps:mapView centerY="51.0">
+                        <maps:extent minX="-15.0" minY="30.0" maxX="40.0" maxY="60.0"/>
+                    </maps:mapView>
+                </maps:geoMap>
+
+            </vbox>
+        </split>
+    </layout>
+</view>

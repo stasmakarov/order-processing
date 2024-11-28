@@ -55,6 +55,8 @@ dependencies {
     implementation 'io.jmix.maps:jmix-maps-flowui-starter'
     implementation 'io.jmix.maps:jmix-maps-starter'
     implementation 'io.jmix.charts:jmix-charts-flowui-starter'
+    implementation 'io.jmix.notifications:jmix-notifications-flowui-starter'
+    implementation 'io.jmix.notifications:jmix-notifications-starter'
 }
 
 configurations.implementation {
