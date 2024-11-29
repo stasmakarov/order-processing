@@ -47,6 +47,7 @@
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveAction"/>
             <button id="closeButton" action="closeAction"/>
+            <button id="verifyAddressBtn" text="Verify address"/>
         </hbox>
     </layout>
 </view>
