@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://io.jmix.bpmflowui.view.processinstance/processInstanceList.title">
+    <data>
+        <collection id="processInstancesDc" class="io.jmix.bpm.entity.ProcessInstanceData"/>
+    </data>
+    <actions>
+        <action id="applyFilter" text="msg:///actions.Apply"
+                icon="SEARCH"/>
+    </actions>
+    <layout>
+        <formLayout id="filter">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="20em" columns="2"/>
+                <responsiveStep minWidth="40em" columns="3"/>
+                <responsiveStep minWidth="60em" columns="4"/>
+            </responsiveSteps>
+            <comboBox id="processDefinitionComboBox"
+                      label="msg://io.jmix.bpmflowui.view.processinstance/processDefinition"/>
+            <textField id="businessKeyField" label="msg://io.jmix.bpmflowui.view.processinstance/businessKey"/>
+            <comboBox id="processStateComboBox" label="msg://io.jmix.bpmflowui.view.processinstance/completionState"/>
+            <button id="applyFilterBtn" action="applyFilter"/>
+        </formLayout>
+        <hbox id="buttonsPanel" classNames="buttons-panel" alignItems="BASELINE">
+            <button id="editBtn" action="processInstancesGrid.edit"/>
+            <button id="deleteAllBtn" text="Delete all"/>
+        </hbox>
+        <dataGrid id="processInstancesGrid"
+                  dataContainer="processInstancesDc"
+                  width="100%"
+                  minHeight="20em">
+            <actions>
+                <action id="edit" type="list_edit"/>
+            </actions>
+            <columns resizable="true">
+                <column property="id"/>
+                <column property="processDefinitionKey" resizable="true"/>
+                <column property="processDefinitionName" resizable="true"/>
+                <column property="processDefinitionVersion" resizable="true"/>
+                <column property="businessKey"/>
+                <column property="startTime"/>
+                <column property="endTime"/>
+            </columns>
+        </dataGrid>
+    </layout>
+</view>

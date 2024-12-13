@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
 
-    <menu id="application" title="msg://com.company.orderprocessing/menu.application.title" opened="true">
-        <item view="ord_User.list" title="msg://com.company.orderprocessing.view.user/UserListView.title"/>
-        <item view="ord_Item.list" title="msg://com.company.orderprocessing.view.item/itemListView.title"/>
+    <menu opened="true" id="application" title="msg://com.company.orderprocessing/menu.application.title">
+        <item view="ord_DemoView" title="msg://com.company.orderprocessing.view.demo/demoView.title"
+              icon="vaadin:abacus"/>
+        <separator/>
         <item view="ord_Order.list" title="msg://com.company.orderprocessing.view.order/orderListView.title"/>
+        <item view="ord_Item.list" title="msg://com.company.orderprocessing.view.item/itemListView.title"/>
+        <item view="ord_Numerator.list"
+              title="msg://com.company.orderprocessing.view.numerator/numeratorListView.title"/>
+        <item view="ord_User.list" title="msg://com.company.orderprocessing.view.user/UserListView.title"/>
     </menu>
-
 </menu-config>

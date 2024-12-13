@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flowable="http://flowable.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="delivery-process" name="Delivery process" isExecutable="true">
+    <startEvent id="Event_1lupvge">
+      <outgoing>Flow_0tiilg9</outgoing>
+      <messageEventDefinition id="MessageEventDefinition_0swe5lv" messageRef="start-delivery" />
+    </startEvent>
+    <exclusiveGateway id="Gateway_1eqqcq9">
+      <incoming>Flow_0tiilg9</incoming>
+      <incoming>Flow_1ohq3pn</incoming>
+      <outgoing>Flow_09jcw7y</outgoing>
+    </exclusiveGateway>
+    <sequenceFlow id="Flow_0tiilg9" sourceRef="Event_1lupvge" targetRef="Gateway_1eqqcq9" />
+    <sequenceFlow id="Flow_1ohq3pn" sourceRef="startEvent1" targetRef="Gateway_1eqqcq9" />
+    <sequenceFlow id="Flow_09jcw7y" sourceRef="Gateway_1eqqcq9" targetRef="Activity_1sa9qd6" />
+    <serviceTask id="Activity_1sa9qd6" name="Определить объем готовый к доставке" flowable:type="jmix-load-entities-jpql">
+      <extensionElements>
+        <flowable:field name="jpql">
+          <flowable:string>select COUNT(o) from ord_Order o where o.status = :status</flowable:string>
+        </flowable:field>
+        <flowable:field name="resultVariable">
+          <flowable:string>deliveryVolume</flowable:string>
+        </flowable:field>
+        <flowable:field name="saveLoadResultAs">
+          <flowable:string>single-element</flowable:string>
+        </flowable:field>
+        <flowable:field name="jpqlParameters">
+          <flowable:string>[{"name":"status","valueType":"expression","value":"${OrderStatus.READY}"}]</flowable:string>
+        </flowable:field>
+      </extensionElements>
+      <incoming>Flow_09jcw7y</incoming>
+      <outgoing>Flow_1b1tb6y</outgoing>
+    </serviceTask>
+    <exclusiveGateway id="Gateway_1q9ehdh" default="Flow_0kwom7c">
+      <incoming>Flow_1b1tb6y</incoming>
+      <outgoing>Flow_0kwom7c</outgoing>
+      <outgoing>Flow_07fsczr</outgoing>
+    </exclusiveGateway>
+    <sequenceFlow id="Flow_1b1tb6y" sourceRef="Activity_1sa9qd6" targetRef="Gateway_1q9ehdh" />
+    <sequenceFlow id="Flow_0kwom7c" sourceRef="Gateway_1q9ehdh" targetRef="Activity_1aada8n" />
+    <sequenceFlow id="Flow_0vg8lda" sourceRef="Activity_1aada8n" targetRef="Activity_00pks50" />
+    <serviceTask id="Activity_00pks50" name="Сообщить о доставке" flowable:expression="${ord_DeliveryService.sendMessage(deliveryCollection_item)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_DeliveryService" methodName="sendMessage">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">deliveryCollection_item</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0vg8lda</incoming>
+      <outgoing>Flow_13goami</outgoing>
+      <multiInstanceLoopCharacteristics isSequential="true" flowable:collection="deliveryCollection" flowable:elementVariable="deliveryCollection_item" jmix:collectionSource="processVariable" jmix:collectionValue="deliveryCollection" />
+    </serviceTask>
+    <endEvent id="Event_1v5wbck">
+      <incoming>Flow_13goami</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_13goami" sourceRef="Activity_00pks50" targetRef="Event_1v5wbck" />
+    <endEvent id="Event_1thy9s8">
+      <incoming>Flow_07fsczr</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_07fsczr" name="Нет заказоа к доставке" sourceRef="Gateway_1q9ehdh" targetRef="Event_1thy9s8">
+      <extensionElements>
+        <jmix:conditionDetails conditionSource="expression" />
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression">${deliveryVolume == 0}</conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="Activity_1aada8n" name="Сформировать доставку" flowable:type="jmix-load-entities-jpql">
+      <extensionElements>
+        <flowable:field name="jpql">
+          <flowable:string>select o from ord_Order o where o.status = :status</flowable:string>
+        </flowable:field>
+        <flowable:field name="resultVariable">
+          <flowable:string>deliveryCollection</flowable:string>
+        </flowable:field>
+        <flowable:field name="saveLoadResultAs">
+          <flowable:string>collection</flowable:string>
+        </flowable:field>
+        <flowable:field name="jpqlParameters">
+          <flowable:string>[{"name":"status","valueType":"expression","value":"${OrderStatus.READY}"}]</flowable:string>
+        </flowable:field>
+      </extensionElements>
+      <incoming>Flow_0kwom7c</incoming>
+      <outgoing>Flow_0vg8lda</outgoing>
+    </serviceTask>
+    <startEvent id="startEvent1">
+      <outgoing>Flow_1ohq3pn</outgoing>
+    </startEvent>
+    <textAnnotation id="TextAnnotation_0zoqv6h">
+      <text>Запуск по расписанию при помощи Quartz</text>
+    </textAnnotation>
+    <association id="Association_14ekqzg" sourceRef="startEvent1" targetRef="TextAnnotation_0zoqv6h" />
+  </process>
+  <message id="start-delivery" name="Start delivery" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="delivery-process">
+      <bpmndi:BPMNShape id="TextAnnotation_0zoqv6h_di" bpmnElement="TextAnnotation_0zoqv6h">
+        <omgdc:Bounds x="190" y="70" width="140" height="40" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_003656t_di" bpmnElement="Event_1lupvge">
+        <omgdc:Bounds x="150" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1eqqcq9_di" bpmnElement="Gateway_1eqqcq9" isMarkerVisible="true">
+        <omgdc:Bounds x="225" y="225" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0evf6zm_di" bpmnElement="Activity_1sa9qd6">
+        <omgdc:Bounds x="320" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1q9ehdh_di" bpmnElement="Gateway_1q9ehdh" isMarkerVisible="true">
+        <omgdc:Bounds x="465" y="225" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0a70lxa_di" bpmnElement="Activity_00pks50">
+        <omgdc:Bounds x="710" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1v5wbck_di" bpmnElement="Event_1v5wbck">
+        <omgdc:Bounds x="862" y="232" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1thy9s8_di" bpmnElement="Event_1thy9s8">
+        <omgdc:Bounds x="562" y="342" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1io9a4s_di" bpmnElement="Activity_1aada8n">
+        <omgdc:Bounds x="560" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_17aq2lz_di" bpmnElement="startEvent1">
+        <omgdc:Bounds x="150" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_14ekqzg_di" bpmnElement="Association_14ekqzg">
+        <omgdi:waypoint x="180" y="155" />
+        <omgdi:waypoint x="218" y="110" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0tiilg9_di" bpmnElement="Flow_0tiilg9">
+        <omgdi:waypoint x="186" y="330" />
+        <omgdi:waypoint x="250" y="330" />
+        <omgdi:waypoint x="250" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ohq3pn_di" bpmnElement="Flow_1ohq3pn">
+        <omgdi:waypoint x="186" y="168" />
+        <omgdi:waypoint x="250" y="168" />
+        <omgdi:waypoint x="250" y="225" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09jcw7y_di" bpmnElement="Flow_09jcw7y">
+        <omgdi:waypoint x="275" y="250" />
+        <omgdi:waypoint x="320" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1b1tb6y_di" bpmnElement="Flow_1b1tb6y">
+        <omgdi:waypoint x="420" y="250" />
+        <omgdi:waypoint x="465" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0kwom7c_di" bpmnElement="Flow_0kwom7c">
+        <omgdi:waypoint x="515" y="250" />
+        <omgdi:waypoint x="560" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vg8lda_di" bpmnElement="Flow_0vg8lda">
+        <omgdi:waypoint x="660" y="250" />
+        <omgdi:waypoint x="710" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13goami_di" bpmnElement="Flow_13goami">
+        <omgdi:waypoint x="810" y="250" />
+        <omgdi:waypoint x="862" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07fsczr_di" bpmnElement="Flow_07fsczr">
+        <omgdi:waypoint x="490" y="275" />
+        <omgdi:waypoint x="490" y="360" />
+        <omgdi:waypoint x="562" y="360" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="470" y="366" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

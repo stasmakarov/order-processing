@@ -14,7 +14,6 @@ import java.util.UUID;
 })
 @Entity(name = "ord_Order")
 public class Order {
-    @InstanceName
     @JmixGeneratedValue
     @Column(name = "ID", nullable = false)
     @Id
@@ -23,6 +22,10 @@ public class Order {
     @JmixGeneratedValue
     @Column(name = "UUID")
     private UUID uuid;
+
+    @InstanceName
+    @Column(name = "CODE")
+    private String orderNumber;
 
     @Column(name = "CUSTOMER")
     private String customer;
@@ -45,6 +48,14 @@ public class Order {
 
     @Column(name = "PROCESS_INSTANCE_ID")
     private String processInstanceId;
+
+    public String getOrderNumber() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
 
     public String getProcessInstanceId() {
         return processInstanceId;

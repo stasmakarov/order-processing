@@ -6,7 +6,7 @@
     <data>
         <collection id="ordersDc"
                     class="com.company.orderprocessing.entity.Order">
-            <fetchPlan extends="_instance_name">
+            <fetchPlan extends="_base">
                 <property name="address"/>
                 <property name="item" fetchPlan="_instance_name"/>
                 <property name="quantity"/>
@@ -24,7 +24,7 @@
         <dataLoadCoordinator auto="true"/>
         <urlQueryParameters>
             <genericFilter component="genericFilter"/>
-            <pagination component="pagination"/>
+            <pagination component="pagination" maxResultsParam="1000"/>
         </urlQueryParameters>
     </facets>
     <actions>
@@ -45,7 +45,7 @@
                     <button id="removeButton" action="ordersDataGrid.remove"/>
                     <simplePagination id="pagination" dataLoader="ordersDl"/>
                 </hbox>
-                <dataGrid id="ordersDataGrid"
+                <dataGrid id="ordersDataGrid" pageSize="200" allRowsVisible="true"
                           width="100%"
                           minHeight="20em"
                           dataContainer="ordersDc"
@@ -58,11 +58,9 @@
                         <action id="remove" type="list_remove"/>
                     </actions>
                     <columns resizable="true">
-                        <column property="id"/>
-                        <column property="address"/>
-                        <column property="item"/>
-                        <column property="quantity"/>
+                        <column property="orderNumber"/>
                         <column property="status"/>
+                        <column property="address"/>
                     </columns>
                 </dataGrid>
                 <hbox id="lookupActions" visible="false">
@@ -82,11 +80,15 @@
                                                    property="location"/>
                         </maps:vector>
                     </maps:layers>
-                    <maps:mapView centerY="51.0">
-                        <maps:extent minX="-15.0" minY="30.0" maxX="40.0" maxY="60.0"/>
+                    <!-- Define the boundaries for Moscow -->
+                    <maps:mapView centerY="55.7558"
+                                  centerX="37.6173">
+                        <maps:extent minX="37.3219"
+                                     minY="55.4092"
+                                     maxX="37.8925"
+                                     maxY="55.9021"/>
                     </maps:mapView>
                 </maps:geoMap>
-
             </vbox>
         </split>
     </layout>

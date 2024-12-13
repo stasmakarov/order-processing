@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="manufacturing-process" name="Manufacturing process" isExecutable="true">
+    <startEvent id="startEvent1">
+      <outgoing>Flow_18kf0cf</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_18kf0cf" sourceRef="startEvent1" targetRef="Gateway_0nx4afu" />
+    <serviceTask id="Activity_15wnb43" name="Произвести товары" flowable:expression="${ord_ManufacturingService.supplyItems()}" jmix:taskType="springBean" jmix:beanName="ord_ManufacturingService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_ManufacturingService" methodName="supplyItems" />
+      </extensionElements>
+      <incoming>Flow_07iuc36</incoming>
+      <outgoing>Flow_18mvo45</outgoing>
+    </serviceTask>
+    <sequenceFlow id="Flow_18mvo45" sourceRef="Activity_15wnb43" targetRef="Gateway_1hpkj6e" />
+    <eventBasedGateway id="Gateway_1hpkj6e">
+      <incoming>Flow_18mvo45</incoming>
+      <outgoing>Flow_12unh8u</outgoing>
+      <outgoing>Flow_0p0cepw</outgoing>
+      <outgoing>Flow_1fvx28t</outgoing>
+    </eventBasedGateway>
+    <intermediateCatchEvent id="Event_0ssik30">
+      <incoming>Flow_12unh8u</incoming>
+      <outgoing>Flow_108b3pt</outgoing>
+      <timerEventDefinition id="TimerEventDefinition_0d3vxho">
+        <timeDuration xsi:type="tFormalExpression">PT5M</timeDuration>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_12unh8u" sourceRef="Gateway_1hpkj6e" targetRef="Event_0ssik30" />
+    <exclusiveGateway id="Gateway_0nx4afu">
+      <incoming>Flow_18kf0cf</incoming>
+      <incoming>Flow_108b3pt</incoming>
+      <incoming>Flow_065oa16</incoming>
+      <outgoing>Flow_07iuc36</outgoing>
+    </exclusiveGateway>
+    <sequenceFlow id="Flow_07iuc36" sourceRef="Gateway_0nx4afu" targetRef="Activity_15wnb43" />
+    <sequenceFlow id="Flow_108b3pt" name="Нормальный производственый цикл" sourceRef="Event_0ssik30" targetRef="Gateway_0nx4afu" />
+    <intermediateCatchEvent id="Event_06ua6zr" name="Приостановить работу">
+      <incoming>Flow_0p0cepw</incoming>
+      <outgoing>Flow_0utz42v</outgoing>
+      <signalEventDefinition id="SignalEventDefinition_0tjvli6" signalRef="manufacturing-pause" />
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_0p0cepw" sourceRef="Gateway_1hpkj6e" targetRef="Event_06ua6zr" />
+    <sequenceFlow id="Flow_0utz42v" sourceRef="Event_06ua6zr" targetRef="Event_0u0djwg" />
+    <intermediateCatchEvent id="Event_0u0djwg" name="Возобновить работу">
+      <incoming>Flow_0utz42v</incoming>
+      <outgoing>Flow_065oa16</outgoing>
+      <signalEventDefinition id="SignalEventDefinition_154ybtp" signalRef="manufacturing-resume" />
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_065oa16" sourceRef="Event_0u0djwg" targetRef="Gateway_0nx4afu" />
+    <intermediateCatchEvent id="Event_0nlfpmq" name="Полная остановка">
+      <incoming>Flow_1fvx28t</incoming>
+      <outgoing>Flow_09d8q9m</outgoing>
+      <signalEventDefinition id="SignalEventDefinition_12gkc7i" signalRef="manufacturing-full-stop" />
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_1fvx28t" sourceRef="Gateway_1hpkj6e" targetRef="Event_0nlfpmq" />
+    <sequenceFlow id="Flow_09d8q9m" sourceRef="Event_0nlfpmq" targetRef="Event_1h8qo4h" />
+    <endEvent id="Event_1h8qo4h">
+      <incoming>Flow_09d8q9m</incoming>
+      <terminateEventDefinition id="TerminateEventDefinition_1xq97go" />
+    </endEvent>
+  </process>
+  <signal id="manufacturing-full-stop" name="Manufacturing full stop" flowable:scope="global" />
+  <signal id="manufacturing-pause" name="Manufacturing pause" flowable:scope="global" />
+  <signal id="manufacturing-resume" name="Manufacturing resume" flowable:scope="global" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="manufacturing-process">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="62" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_03mty1m_di" bpmnElement="Activity_15wnb43">
+        <omgdc:Bounds x="240" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1arip82_di" bpmnElement="Gateway_1hpkj6e">
+        <omgdc:Bounds x="385" y="143" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ssik30_di" bpmnElement="Event_0ssik30">
+        <omgdc:Bounds x="392" y="42" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0nx4afu_di" bpmnElement="Gateway_0nx4afu" isMarkerVisible="true">
+        <omgdc:Bounds x="135" y="143" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_06ua6zr_di" bpmnElement="Event_06ua6zr">
+        <omgdc:Bounds x="392" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="371" y="295" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1u4a8ww_di" bpmnElement="Event_0u0djwg">
+        <omgdc:Bounds x="272" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="257" y="295" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0nlfpmq_di" bpmnElement="Event_0nlfpmq">
+        <omgdc:Bounds x="482" y="150" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="474" y="193" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1l1on8l_di" bpmnElement="Event_1h8qo4h">
+        <omgdc:Bounds x="572" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_18kf0cf_di" bpmnElement="Flow_18kf0cf">
+        <omgdi:waypoint x="98" y="168" />
+        <omgdi:waypoint x="135" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18mvo45_di" bpmnElement="Flow_18mvo45">
+        <omgdi:waypoint x="340" y="168" />
+        <omgdi:waypoint x="385" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12unh8u_di" bpmnElement="Flow_12unh8u">
+        <omgdi:waypoint x="410" y="143" />
+        <omgdi:waypoint x="410" y="78" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07iuc36_di" bpmnElement="Flow_07iuc36">
+        <omgdi:waypoint x="185" y="168" />
+        <omgdi:waypoint x="240" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_108b3pt_di" bpmnElement="Flow_108b3pt">
+        <omgdi:waypoint x="392" y="60" />
+        <omgdi:waypoint x="160" y="60" />
+        <omgdi:waypoint x="160" y="143" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="245" y="20" width="90" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0p0cepw_di" bpmnElement="Flow_0p0cepw">
+        <omgdi:waypoint x="410" y="193" />
+        <omgdi:waypoint x="410" y="252" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0utz42v_di" bpmnElement="Flow_0utz42v">
+        <omgdi:waypoint x="392" y="270" />
+        <omgdi:waypoint x="308" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_065oa16_di" bpmnElement="Flow_065oa16">
+        <omgdi:waypoint x="272" y="270" />
+        <omgdi:waypoint x="160" y="270" />
+        <omgdi:waypoint x="160" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1fvx28t_di" bpmnElement="Flow_1fvx28t">
+        <omgdi:waypoint x="435" y="168" />
+        <omgdi:waypoint x="482" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09d8q9m_di" bpmnElement="Flow_09d8q9m">
+        <omgdi:waypoint x="518" y="168" />
+        <omgdi:waypoint x="572" y="168" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

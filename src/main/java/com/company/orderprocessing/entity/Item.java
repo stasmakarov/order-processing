@@ -24,6 +24,28 @@ public class Item {
     @Column(name = "DESCRIPTION")
     private String description;
 
+    @Column(name = "TOTAL_QUANTITY")
+    private Integer totalQuantity;
+
+    @Column(name = "RESERVED")
+    private Integer reserved;
+
+    public Integer getReserved() {
+        return reserved;
+    }
+
+    public void setReserved(Integer reserved) {
+        this.reserved = reserved;
+    }
+
+    public Integer getTotalQuantity() {
+        return totalQuantity;
+    }
+
+    public void setTotalQuantity(Integer totalQuantity) {
+        this.totalQuantity = totalQuantity;
+    }
+
     public String getDescription() {
         return description;
     }

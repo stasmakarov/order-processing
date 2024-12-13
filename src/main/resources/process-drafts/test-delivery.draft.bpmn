@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="test-delivery" name="Test delivery" isExecutable="true">
+    <startEvent id="startEvent1">
+      <extensionElements>
+        <jmix:formData type="input-dialog" openMode="DIALOG">
+          <jmix:formFields>
+            <jmix:formField id="item" caption="Item" type="entity" editable="true" required="false">
+              <jmix:formFieldProperty name="entityName" value="ord_Item" />
+              <jmix:formFieldProperty name="uiComponent" value="comboBox" />
+            </jmix:formField>
+            <jmix:formField id="reserve" caption="Reserve" type="long" editable="true" required="false" />
+          </jmix:formFields>
+        </jmix:formData>
+      </extensionElements>
+      <outgoing>Flow_0akxtyz</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_0akxtyz" sourceRef="startEvent1" targetRef="Activity_12q525v" />
+    <callActivity id="Activity_12q525v" name="Доставка" calledElement="delivery-process">
+      <incoming>Flow_0akxtyz</incoming>
+      <outgoing>Flow_1vpge5x</outgoing>
+    </callActivity>
+    <endEvent id="Event_0x8tj2q">
+      <incoming>Flow_1vpge5x</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_1vpge5x" sourceRef="Activity_12q525v" targetRef="Event_0x8tj2q" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="test-delivery">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="150" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0dpjpmv_di" bpmnElement="Activity_12q525v">
+        <omgdc:Bounds x="240" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0x8tj2q_di" bpmnElement="Event_0x8tj2q">
+        <omgdc:Bounds x="402" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0akxtyz_di" bpmnElement="Flow_0akxtyz">
+        <omgdi:waypoint x="186" y="168" />
+        <omgdi:waypoint x="240" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vpge5x_di" bpmnElement="Flow_1vpge5x">
+        <omgdi:waypoint x="340" y="168" />
+        <omgdi:waypoint x="402" y="168" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

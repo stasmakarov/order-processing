@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flowable="http://flowable.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="test-async-request" name="Test async request" isExecutable="true">
+    <startEvent id="startEvent1">
+      <outgoing>Flow_1vy5erd</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_1vy5erd" sourceRef="startEvent1" targetRef="Activity_0n7ut9h" />
+    <scriptTask id="Activity_0n7ut9h" scriptFormat="groovy">
+      <incoming>Flow_1vy5erd</incoming>
+      <outgoing>Flow_1yvfz19</outgoing>
+      <script>execution.setVariable("address", "Москва, Красная площадь, дом 1")</script>
+    </scriptTask>
+    <sequenceFlow id="Flow_1yvfz19" sourceRef="Activity_0n7ut9h" targetRef="Activity_0r0lqww" />
+    <sequenceFlow id="Flow_18qxa9f" sourceRef="Activity_0r0lqww" targetRef="Event_1j5wx4s" />
+    <endEvent id="Event_1j5wx4s">
+      <incoming>Flow_18qxa9f</incoming>
+    </endEvent>
+    <serviceTask id="Activity_0r0lqww" flowable:expression="${ord_AsyncRequestService.sendAsyncRequest(address)}" jmix:taskType="springBean" jmix:beanName="ord_AsyncRequestService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_AsyncRequestService" methodName="sendAsyncRequest">
+          <jmix:methodParam name="address" type="java.lang.String" isVariable="true">address</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_1yvfz19</incoming>
+      <outgoing>Flow_18qxa9f</outgoing>
+    </serviceTask>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="test-async-request">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="150" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_167m3me_di" bpmnElement="Activity_0n7ut9h">
+        <omgdc:Bounds x="240" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1j5wx4s_di" bpmnElement="Event_1j5wx4s">
+        <omgdc:Bounds x="722" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0upjro4_di" bpmnElement="Activity_0r0lqww">
+        <omgdc:Bounds x="400" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1vy5erd_di" bpmnElement="Flow_1vy5erd">
+        <omgdi:waypoint x="186" y="168" />
+        <omgdi:waypoint x="240" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1yvfz19_di" bpmnElement="Flow_1yvfz19">
+        <omgdi:waypoint x="340" y="168" />
+        <omgdi:waypoint x="400" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18qxa9f_di" bpmnElement="Flow_18qxa9f">
+        <omgdi:waypoint x="500" y="168" />
+        <omgdi:waypoint x="722" y="168" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

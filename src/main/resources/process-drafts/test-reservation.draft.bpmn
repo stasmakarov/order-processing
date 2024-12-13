@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="test-reservation" name="Test reservation" isExecutable="true">
+    <startEvent id="startEvent1">
+      <extensionElements>
+        <jmix:formData type="input-dialog" openMode="DIALOG">
+          <jmix:formFields>
+            <jmix:formField id="item" caption="Item" type="entity" editable="true" required="false">
+              <jmix:formFieldProperty name="entityName" value="ord_Item" />
+              <jmix:formFieldProperty name="uiComponent" value="comboBox" />
+            </jmix:formField>
+            <jmix:formField id="reserve" caption="Reserve" type="long" editable="true" required="false" />
+          </jmix:formFields>
+        </jmix:formData>
+      </extensionElements>
+      <outgoing>Flow_18mw2sc</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_18mw2sc" sourceRef="startEvent1" targetRef="Activity_1vi04sp" />
+    <callActivity id="Activity_1vi04sp" name="Резерв. и оплата" calledElement="reservation-and-payment">
+      <incoming>Flow_18mw2sc</incoming>
+      <outgoing>Flow_0e1sa74</outgoing>
+    </callActivity>
+    <endEvent id="Event_02jtcj3">
+      <incoming>Flow_0e1sa74</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_0e1sa74" sourceRef="Activity_1vi04sp" targetRef="Event_02jtcj3" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="test-reservation">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="150" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1jcijyw_di" bpmnElement="Activity_1vi04sp">
+        <omgdc:Bounds x="240" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_02jtcj3_di" bpmnElement="Event_02jtcj3">
+        <omgdc:Bounds x="402" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_18mw2sc_di" bpmnElement="Flow_18mw2sc">
+        <omgdi:waypoint x="186" y="168" />
+        <omgdi:waypoint x="240" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0e1sa74_di" bpmnElement="Flow_0e1sa74">
+        <omgdi:waypoint x="340" y="168" />
+        <omgdi:waypoint x="402" y="168" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

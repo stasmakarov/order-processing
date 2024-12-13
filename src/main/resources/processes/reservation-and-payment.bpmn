@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <process id="reservation-and-payment" name="Reservation and payment" isExecutable="true">
+    <startEvent id="startEvent1">
+      <extensionElements>
+        <jmix:processVariables />
+      </extensionElements>
+      <outgoing>Flow_1c0d9vx</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_1c0d9vx" sourceRef="startEvent1" targetRef="Activity_07iyc4m" />
+    <sequenceFlow id="Flow_0x4pael" sourceRef="Activity_119cw5i" targetRef="Gateway_0fv32xn" />
+    <serviceTask id="Activity_0cjpy4h" name="Провести оплату" flowable:async="true" flowable:expression="${ord_OrderService.simulatePayment()}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean />
+        <jmix:springBean beanName="ord_OrderService" methodName="simulatePayment" />
+      </extensionElements>
+      <incoming>Flow_0vzgvek</incoming>
+      <outgoing>Flow_0szumj0</outgoing>
+    </serviceTask>
+    <sequenceFlow id="Flow_0pyh0bn" sourceRef="Event_077m8qn" targetRef="Event_0feygf7" />
+    <intermediateThrowEvent id="Event_0feygf7">
+      <incoming>Flow_0pyh0bn</incoming>
+      <outgoing>Flow_1ffzord</outgoing>
+      <compensateEventDefinition id="CompensateEventDefinition_18kjlgv" />
+    </intermediateThrowEvent>
+    <boundaryEvent id="Event_01alo5f" attachedToRef="Activity_119cw5i">
+      <compensateEventDefinition id="CompensateEventDefinition_017gazs" />
+    </boundaryEvent>
+    <endEvent id="Event_0sd6sey">
+      <incoming>Flow_0szumj0</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_0szumj0" sourceRef="Activity_0cjpy4h" targetRef="Event_0sd6sey" />
+    <sequenceFlow id="Flow_1ffzord" sourceRef="Event_0feygf7" targetRef="Event_0edornz" />
+    <endEvent id="Event_0edornz">
+      <incoming>Flow_1ffzord</incoming>
+      <errorEventDefinition id="ErrorEventDefinition_0l5kkj8" errorRef="payment-error" />
+    </endEvent>
+    <boundaryEvent id="Event_077m8qn" attachedToRef="Activity_0cjpy4h">
+      <outgoing>Flow_0pyh0bn</outgoing>
+      <errorEventDefinition id="ErrorEventDefinition_0lk2mkq" errorRef="payment-error" />
+    </boundaryEvent>
+    <serviceTask id="Activity_0ap5mr0" name="Отменить резерв." isForCompensation="true" flowable:async="true" flowable:expression="${ord_OrderService.canselReservation(item,reserve)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="canselReservation">
+          <jmix:methodParam name="item" type="com.company.orderprocessing.entity.Item" isVariable="true">item</jmix:methodParam>
+          <jmix:methodParam name="reserve" type="java.lang.Long" isVariable="true">reserve</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+    </serviceTask>
+    <serviceTask id="Activity_119cw5i" name="Зарезерв. товар" flowable:async="true" flowable:expression="${ord_OrderService.reservation(item,reserve)}" flowable:resultVariable="result" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="reservation">
+          <jmix:methodParam name="item" type="com.company.orderprocessing.entity.Item" isVariable="true">item</jmix:methodParam>
+          <jmix:methodParam name="reserve" type="java.lang.Long" isVariable="true">reserve</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0il3qi8</incoming>
+      <outgoing>Flow_0x4pael</outgoing>
+    </serviceTask>
+    <sequenceFlow id="Flow_0il3qi8" sourceRef="Activity_07iyc4m" targetRef="Activity_119cw5i" />
+    <scriptTask id="Activity_07iyc4m" name="Определить переменные" scriptFormat="groovy">
+      <incoming>Flow_1c0d9vx</incoming>
+      <outgoing>Flow_0il3qi8</outgoing>
+      <script>execution.setVariable("item", order.item)
+execution.setVariable("reserve", order.quantity)</script>
+    </scriptTask>
+    <exclusiveGateway id="Gateway_0fv32xn" default="Flow_0vzgvek">
+      <incoming>Flow_0x4pael</incoming>
+      <outgoing>Flow_0vzgvek</outgoing>
+      <outgoing>Flow_1l1p1fd</outgoing>
+    </exclusiveGateway>
+    <sequenceFlow id="Flow_0vzgvek" sourceRef="Gateway_0fv32xn" targetRef="Activity_0cjpy4h" />
+    <sequenceFlow id="Flow_1l1p1fd" sourceRef="Gateway_0fv32xn" targetRef="Event_1sfu4yf">
+      <extensionElements>
+        <jmix:conditionDetails conditionSource="expression" />
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression">${result == 0}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="Event_1sfu4yf">
+      <incoming>Flow_1l1p1fd</incoming>
+      <errorEventDefinition id="ErrorEventDefinition_0kh1ud0" errorRef="reservation-error" />
+    </endEvent>
+    <association id="Association_085nn0o" associationDirection="One" sourceRef="Event_01alo5f" targetRef="Activity_0ap5mr0" />
+  </process>
+  <error id="reservation-error" name="Reservation error" errorCode="901" />
+  <error id="payment-error" name="Payment error" errorCode="902" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_process">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="reservation-and-payment">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="12" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ntiki7_di" bpmnElement="Activity_0cjpy4h">
+        <omgdc:Bounds x="480" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1nta0u6_di" bpmnElement="Event_0feygf7">
+        <omgdc:Bounds x="562" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0sd6sey_di" bpmnElement="Event_0sd6sey">
+        <omgdc:Bounds x="642" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_19pq69l_di" bpmnElement="Event_0edornz">
+        <omgdc:Bounds x="642" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_03zw9in_di" bpmnElement="Activity_0ap5mr0">
+        <omgdc:Bounds x="260" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0lu4b4y_di" bpmnElement="Activity_119cw5i">
+        <omgdc:Bounds x="240" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0e3mfuv_di" bpmnElement="Activity_07iyc4m">
+        <omgdc:Bounds x="90" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0fv32xn_di" bpmnElement="Gateway_0fv32xn" isMarkerVisible="true">
+        <omgdc:Bounds x="375" y="143" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0myzbk7_di" bpmnElement="Event_1sfu4yf">
+        <omgdc:Bounds x="382" y="32" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ri8ewr_di" bpmnElement="Event_077m8qn">
+        <omgdc:Bounds x="562" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_17iyxyg_di" bpmnElement="Event_01alo5f">
+        <omgdc:Bounds x="222" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1c0d9vx_di" bpmnElement="Flow_1c0d9vx">
+        <omgdi:waypoint x="48" y="168" />
+        <omgdi:waypoint x="90" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0x4pael_di" bpmnElement="Flow_0x4pael">
+        <omgdi:waypoint x="340" y="168" />
+        <omgdi:waypoint x="375" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0pyh0bn_di" bpmnElement="Flow_0pyh0bn">
+        <omgdi:waypoint x="580" y="226" />
+        <omgdi:waypoint x="580" y="272" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0szumj0_di" bpmnElement="Flow_0szumj0">
+        <omgdi:waypoint x="580" y="168" />
+        <omgdi:waypoint x="642" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ffzord_di" bpmnElement="Flow_1ffzord">
+        <omgdi:waypoint x="598" y="290" />
+        <omgdi:waypoint x="642" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0il3qi8_di" bpmnElement="Flow_0il3qi8">
+        <omgdi:waypoint x="190" y="168" />
+        <omgdi:waypoint x="240" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vzgvek_di" bpmnElement="Flow_0vzgvek">
+        <omgdi:waypoint x="425" y="168" />
+        <omgdi:waypoint x="480" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1l1p1fd_di" bpmnElement="Flow_1l1p1fd">
+        <omgdi:waypoint x="400" y="143" />
+        <omgdi:waypoint x="400" y="68" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
+        <omgdi:waypoint x="240" y="226" />
+        <omgdi:waypoint x="240" y="290" />
+        <omgdi:waypoint x="260" y="290" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
