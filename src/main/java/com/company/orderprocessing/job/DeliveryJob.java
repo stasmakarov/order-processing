@@ -11,14 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class DeliveryJob implements Job {
 
     private static final Logger log = LoggerFactory.getLogger(DeliveryJob.class);
-    private static final String DELIVERY_PROCESS_DEF_ID = "delivery-process";
+    private static final String DELIVERY_PROCESS_DEF_KEY = "delivery-process";
 
     @Autowired
     private RuntimeService runtimeService;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        runtimeService.startProcessInstanceById(DELIVERY_PROCESS_DEF_ID);
+//        runtimeService.startProcessInstanceByKey(DELIVERY_PROCESS_DEF_KEY);
         log.info("Delivery process started");
     }
 }

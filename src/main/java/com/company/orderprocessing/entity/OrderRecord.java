@@ -3,7 +3,7 @@ package com.company.orderprocessing.entity;
 public record OrderRecord(
         String customer,
         String address,
-        ItemRecord item,
+        String item,
         Integer quantity
 ) {
 }

@@ -5,11 +5,11 @@
       <extensionElements>
         <jmix:formData type="input-dialog" openMode="DIALOG">
           <jmix:formFields>
-            <jmix:formField id="item" caption="Item" type="entity" editable="true" required="false">
-              <jmix:formFieldProperty name="entityName" value="ord_Item" />
-              <jmix:formFieldProperty name="uiComponent" value="comboBox" />
+            <jmix:formField id="order" caption="Order" type="entity" editable="true" required="false">
+              <jmix:formFieldProperty name="entityName" value="ord_Order" />
+              <jmix:formFieldProperty name="uiComponent" value="entityPicker" />
+              <jmix:formFieldProperty name="lookupScreen" value="ord_Order.list" />
             </jmix:formField>
-            <jmix:formField id="reserve" caption="Reserve" type="long" editable="true" required="false" />
           </jmix:formFields>
         </jmix:formData>
       </extensionElements>
@@ -20,30 +20,68 @@
       <incoming>Flow_18mw2sc</incoming>
       <outgoing>Flow_0e1sa74</outgoing>
     </callActivity>
-    <endEvent id="Event_02jtcj3">
+    <endEvent id="success">
       <incoming>Flow_0e1sa74</incoming>
     </endEvent>
-    <sequenceFlow id="Flow_0e1sa74" sourceRef="Activity_1vi04sp" targetRef="Event_02jtcj3" />
+    <sequenceFlow id="Flow_0e1sa74" sourceRef="Activity_1vi04sp" targetRef="success" />
+    <subProcess id="Activity_1t54w7t" triggeredByEvent="true">
+      <startEvent id="Event_0xacmtd">
+        <outgoing>Flow_1fb0ses</outgoing>
+        <errorEventDefinition id="ErrorEventDefinition_1w126r9" />
+      </startEvent>
+      <sequenceFlow id="Flow_1fb0ses" sourceRef="Event_0xacmtd" targetRef="Activity_0mmqr4g" />
+      <scriptTask id="Activity_0mmqr4g" scriptFormat="groovy">
+        <incoming>Flow_1fb0ses</incoming>
+        <outgoing>Flow_1bqvraz</outgoing>
+        <script>println "some error"</script>
+      </scriptTask>
+      <endEvent id="Event_0qafo00">
+        <incoming>Flow_1bqvraz</incoming>
+      </endEvent>
+      <sequenceFlow id="Flow_1bqvraz" sourceRef="Activity_0mmqr4g" targetRef="Event_0qafo00" />
+    </subProcess>
   </process>
+  <error id="reservation-error" name="Reservation error" errorCode="901" />
+  <error id="payment-error" name="Payment error" errorCode="902" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
     <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="test-reservation">
       <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
-        <omgdc:Bounds x="150" y="150" width="36" height="36" />
+        <omgdc:Bounds x="162" y="150" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1jcijyw_di" bpmnElement="Activity_1vi04sp">
         <omgdc:Bounds x="240" y="128" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_02jtcj3_di" bpmnElement="Event_02jtcj3">
-        <omgdc:Bounds x="402" y="150" width="36" height="36" />
+      <bpmndi:BPMNShape id="Event_02jtcj3_di" bpmnElement="success">
+        <omgdc:Bounds x="382" y="150" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0scb2lc_di" bpmnElement="Activity_1t54w7t" isExpanded="true">
+        <omgdc:Bounds x="115" y="240" width="350" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1a7j0eu_di" bpmnElement="Event_0xacmtd">
+        <omgdc:Bounds x="155" y="322" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0m6hydw_di" bpmnElement="Activity_0mmqr4g">
+        <omgdc:Bounds x="245" y="300" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0qafo00_di" bpmnElement="Event_0qafo00">
+        <omgdc:Bounds x="407" y="322" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1fb0ses_di" bpmnElement="Flow_1fb0ses">
+        <omgdi:waypoint x="191" y="340" />
+        <omgdi:waypoint x="245" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1bqvraz_di" bpmnElement="Flow_1bqvraz">
+        <omgdi:waypoint x="345" y="340" />
+        <omgdi:waypoint x="407" y="340" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_18mw2sc_di" bpmnElement="Flow_18mw2sc">
-        <omgdi:waypoint x="186" y="168" />
+        <omgdi:waypoint x="198" y="168" />
         <omgdi:waypoint x="240" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0e1sa74_di" bpmnElement="Flow_0e1sa74">
         <omgdi:waypoint x="340" y="168" />
-        <omgdi:waypoint x="402" y="168" />
+        <omgdi:waypoint x="382" y="168" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

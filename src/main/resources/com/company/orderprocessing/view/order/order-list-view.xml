@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<view xmlns="http://jmix.io/schema/flowui/view" xmlns:maps="http://jmix.io/schema/maps/ui"
-      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:maps="http://jmix.io/schema/maps/ui"
       title="msg://orderListView.title"
       focusComponent="ordersDataGrid">
     <data>
         <collection id="ordersDc"
                     class="com.company.orderprocessing.entity.Order">
             <fetchPlan extends="_base">
-                <property name="address"/>
                 <property name="item" fetchPlan="_instance_name"/>
-                <property name="quantity"/>
-                <property name="location"/>
-                <property name="status"/>
             </fetchPlan>
             <loader id="ordersDl" readOnly="true">
                 <query>
@@ -39,18 +35,30 @@
                     <properties include=".*"/>
                 </genericFilter>
                 <hbox id="buttonsPanel" classNames="buttons-panel">
-                    <button id="createButton" action="ordersDataGrid.create"/>
-                    <button id="editButton" action="ordersDataGrid.edit"/>
-                    <button id="refreshButton" action="ordersDataGrid.refresh"/>
-                    <button id="removeButton" action="ordersDataGrid.remove"/>
-                    <simplePagination id="pagination" dataLoader="ordersDl"/>
+                    <vbox>
+                        <hbox>
+                            <button id="createButton" action="ordersDataGrid.create"/>
+                            <button id="editButton" action="ordersDataGrid.edit"/>
+                            <button id="refreshButton" action="ordersDataGrid.refresh"/>
+                            <button id="removeButton" action="ordersDataGrid.remove" visible="false"/>
+                            <button id="removeAllButton" text="msg://remove.all"/>
+                        </hbox>
+                        <hbox>
+                            <simplePagination id="pagination" visible="false"
+                                              dataLoader="ordersDl"
+                                              autoLoad="true"
+                                              itemsPerPageUnlimitedItemVisible="true"
+                                              itemsPerPageDefaultValue="1000"
+                                              itemsPerPageVisible="false"/>
+                        </hbox>
+                    </vbox>
                 </hbox>
                 <dataGrid id="ordersDataGrid" pageSize="200" allRowsVisible="true"
                           width="100%"
                           minHeight="20em"
                           dataContainer="ordersDc"
                           columnReorderingAllowed="true"
-                          selectionMode="MULTI">
+                          selectionMode="SINGLE">
                     <actions>
                         <action id="create" type="list_create"/>
                         <action id="edit" type="list_edit"/>

@@ -2,32 +2,43 @@ package com.company.orderprocessing.app;
 
 import com.company.orderprocessing.entity.*;
 import com.company.orderprocessing.nominatim.GeoCodingService;
+import com.company.orderprocessing.repository.ItemRepository;
+import com.company.orderprocessing.repository.NumeratorRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jmix.core.DataManager;
+import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.core.security.SystemAuthenticator;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.locationtech.jts.geom.Point;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
 
 @Component(value = "ord_OrderService")
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
 
     private final String START_MESSAGE_NAME = "Start order processing";
     private final SystemAuthenticator systemAuthenticator;
 
     @Autowired
-    private DataManager dataManager;
+    private UnconstrainedDataManager unconstrainedDataManager;
+    @Autowired
+    private ItemRepository itemRepository;
+    @Autowired
+    private NumeratorRepository numeratorRepository;
     @Autowired
     private RuntimeService runtimeService;
+    @Autowired
+    private GeoCodingService geoCodingService;
 
     public OrderService(SystemAuthenticator systemAuthenticator) {
         this.systemAuthenticator = systemAuthenticator;
@@ -35,9 +46,10 @@ public class OrderService {
 
     public void startOrderProcess(String json) {
         OrderRecord orderRecord = deserialize(json);
-        String businessKey = generateBusinessKey();
-        Item item = findItemByName(orderRecord.item().name());
+        if (orderRecord == null) return;
 
+        String businessKey = generateBusinessKey();
+        Item item = findItemByName(orderRecord.item());
         Map<String, Object> map = new HashMap<>();
         map.put("orderNumber", businessKey);
         map.put("customer", orderRecord.customer());
@@ -46,7 +58,11 @@ public class OrderService {
         map.put("item", item);
         systemAuthenticator.begin();
         try {
-            runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME, businessKey, map);
+            ProcessInstance instance = runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME,
+                    businessKey,
+                    map);
+            MDC.put("Process BK", instance.getBusinessKey());
+            log.info("Order process started");
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -55,21 +71,8 @@ public class OrderService {
     }
 
     private String generateBusinessKey() {
-        String orderNumber = null;
-        systemAuthenticator.begin();
-            try {
-                Numerator numerator = dataManager.load(Numerator.class)
-                        .query("select e from ord_Numerator e where e.name = 'order'")
-                        .one();
-                orderNumber = ("ORD-" + String.format("%03d", numerator.getNumber()));
-                numerator.setNumber(numerator.getNumber() + 1);
-                dataManager.save(numerator);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-                systemAuthenticator.end();
-        }
-        return orderNumber;
+        Integer value = numeratorRepository.getNextValue();
+        return value.toString();
     }
 
     public OrderRecord deserialize(String json) {
@@ -77,30 +80,31 @@ public class OrderService {
         try {
             return objectMapper.readValue(json, OrderRecord.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.error("Bad message: {}", json);
+            return null;
         }
     }
 
     private Item findItemByName(String name) {
-        Item item = null;
-        systemAuthenticator.begin();
-        try {
-            item = dataManager.load(Item.class)
-                    .query("select e from ord_Item e where e.name = :name")
-                    .parameter("name", name)
-                    .one();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            systemAuthenticator.end();
-        }
-        return item;
+        Optional<Item> itemOptional = itemRepository.findByName(name);
+        return itemOptional.orElse(null);
     }
 
-    public void simulatePayment() {
+    public boolean simulatePayment(Order order) {
+        MDC.put("Order #", order.getOrderNumber());
         randomDelay();
-        if (randomError())
-            throw new BpmnError("902");
+        if (randomError()) {
+            log.error("Payment failed");
+            return false;
+        }
+        log.info("Payment proceeded");
+        return true;
+    }
+
+    public boolean simulateCancelPayment(Order order) {
+        MDC.put("Order #", order.getOrderNumber());
+        log.info("Payment cancelled");
+        return true;
     }
 
     private void randomDelay() {
@@ -125,23 +129,18 @@ public class OrderService {
                              Integer quantity,
                              String orderNumber,
                              DelegateExecution execution) {
-        systemAuthenticator.begin();
-        try {
-            Order order = dataManager.create(Order.class);
-            order.setCustomer(customer);
-            order.setAddress(address);
-            order.setItem(item);
-            order.setQuantity(quantity);
-            order.setStatus(OrderStatus.NEW);
-            order.setProcessInstanceId(execution.getProcessInstanceId());
-            order.setOrderNumber(orderNumber);
-            dataManager.save(order);
-            return order;
-        } catch (Exception ignored) {}
-        finally {
-            systemAuthenticator.end();
-        }
-        return null;
+        Order order = unconstrainedDataManager.create(Order.class);
+        order.setCustomer(customer);
+        order.setAddress(address);
+        order.setItem(item);
+        order.setQuantity(quantity);
+        order.setStatus(OrderStatus.NEW);
+        order.setProcessInstanceId(execution.getProcessInstanceId());
+        order.setOrderNumber(orderNumber);
+        unconstrainedDataManager.save(order);
+        MDC.put("Order #", order.getOrderNumber());
+        log.info("Order created");
+        return order;
     }
 
     public void setOrderStatus(Order order, int statusId) {
@@ -154,64 +153,64 @@ public class OrderService {
             case 60 -> OrderStatus.CANCELLED;
             default -> null;
         };
+        order.setStatus(status);
+        unconstrainedDataManager.save(order);
+        MDC.put("Order #", order.getOrderNumber());
+        log.info("Status set: {}", status);
+    }
 
-        systemAuthenticator.begin();
-        try {
-            order.setStatus(status);
-            dataManager.save(order);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            systemAuthenticator.end();
+    private boolean reservationGeneral(Order order, ReservationSign sign) {
+        int direction;
+        String message;
+        if (ReservationSign.PLUS.equals(sign)) {
+            direction = 1;
+            message = "Reservation";
+        } else {
+            direction = -1;
+            message = "Reservation canceling";
+        }
+        MDC.put("Order #", order.getOrderNumber());
+        UUID id = order.getItem().getId();
+        Optional<Item> itemOptional = itemRepository.findById(id);
+        if (itemOptional.isEmpty()) return false;
+
+        Item item = itemOptional.get();
+        Integer reserve = order.getQuantity() * direction;
+
+        int availableQty = item.getTotalQuantity() - item.getReserved();
+        if (availableQty >= reserve) {
+            item.setReserved(item.getReserved() + reserve);
+            log.info("{} success: {}: {}", message, item.getName(), reserve);
+            return true;
+        } else {
+            log.info("{} failed: {}: {}", message, item.getName(), reserve);
+            return false;
         }
     }
 
-    public int reservation(Item item, Long reserve) {
-        systemAuthenticator.begin();
-        try {
-            int intReserve = 0;
-            try {
-                intReserve = Math.toIntExact(reserve);
-            } catch  (ArithmeticException ignored) {}
-
-            int availableQty = item.getTotalQuantity() - item.getReserved();
-            if (availableQty >= intReserve) {
-                item.setReserved(item.getReserved() + intReserve);
-                System.out.println("Reservation success: " + item.getName() + ": " + reserve);
-                return 1;
-            } else {
-                System.out.println("Reservation failed: " + item.getName() + ": " + reserve);
-                return 0;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            systemAuthenticator.end();
-        }
+    public boolean doReservation(Order order) {
+        MDC.put("Order #", order.getOrderNumber());
+        log.info("Doing reservation");
+        return reservationGeneral(order, ReservationSign.PLUS);
     }
 
-    public void canselReservation(Item item, Long reserve) {
-        reservation(item, -reserve);
+    public boolean cancelReservation(Order order) {
+        MDC.put("Order #", order.getOrderNumber());
+        log.info("Cancelling reservation");
+        return reservationGeneral(order, ReservationSign.MINUS);
     }
-
-    @Autowired
-    private GeoCodingService geoCodingService;
 
     public void addressVerification(Order order) {
+        MDC.put("Order #", order.getOrderNumber());
         String address = order.getAddress();
         Point point = geoCodingService.verifyAddress(address);
-        systemAuthenticator.begin();
-        try {
-            if (point != null) {
-                order.setStatus(OrderStatus.VERIFIED);
-                order.setLocation(point);
-                dataManager.save(order);
-            } else {
-                throw new BpmnError("100");
-            }
-        } catch (Exception ignored) {
-        } finally {
-            systemAuthenticator.end();
+        if (point != null) {
+            order.setStatus(OrderStatus.VERIFIED);
+            order.setLocation(point);
+            unconstrainedDataManager.save(order);
+            log.info("Address verified {}", address);
+        } else {
+            throw new BpmnError("100");
         }
     }
 }

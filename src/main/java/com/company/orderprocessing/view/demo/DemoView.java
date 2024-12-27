@@ -112,14 +112,14 @@ public class DemoView extends StandardView {
 
     @Subscribe(id = "startReadingBtn", subject = "clickListener")
     public void onStartReadingBtnClick(final ClickEvent<JmixButton> event) {
-        listenerControlService.startListener();
+        listenerControlService.startListening();
         startReadingBtn.setEnabled(false);
         stopReadingBtn.setEnabled(true);
     }
 
     @Subscribe(id = "stopReadingBtn", subject = "clickListener")
     public void onStopReadingBtnClick(final ClickEvent<JmixButton> event) {
-        listenerControlService.stopListener();
+        listenerControlService.startListening();
         startReadingBtn.setEnabled(true);
         stopReadingBtn.setEnabled(false);
     }
