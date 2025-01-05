@@ -7,6 +7,8 @@ import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.Execution;
 import org.flowable.eventsubscription.api.EventSubscription;
 import org.locationtech.jts.geom.Point;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class BackgroundVerificationTask extends BackgroundTask<Integer, Void> {
+    private static final Logger log = LoggerFactory.getLogger(BackgroundVerificationTask.class);
     protected final String address;
     protected final String processInstanceId;
     protected boolean addressVerificationResult;
@@ -21,10 +24,10 @@ public class BackgroundVerificationTask extends BackgroundTask<Integer, Void> {
     private final GeoCodingService geoCodingService;
     private final RuntimeService runtimeService;
 
-    protected BackgroundVerificationTask(String address,
-                                         String processInstanceId,
-                                         GeoCodingService geoCodingService,
-                                         RuntimeService runtimeService) {
+    public BackgroundVerificationTask(String address,
+                                      String processInstanceId,
+                                      GeoCodingService geoCodingService,
+                                      RuntimeService runtimeService) {
         super(30, TimeUnit.SECONDS);
         this.address = address;
         this.processInstanceId = processInstanceId;
@@ -36,7 +39,6 @@ public class BackgroundVerificationTask extends BackgroundTask<Integer, Void> {
     public Void run(TaskLifeCycle<Integer> taskLifeCycle) throws Exception {
         Point point = geoCodingService.verifyAddress(address);
         addressVerificationResult = (point == null);
-        randomDelay();
         return null;
     }
 
@@ -60,22 +62,11 @@ public class BackgroundVerificationTask extends BackgroundTask<Integer, Void> {
             if (subscription.getProcessInstanceId().equals(processInstanceId)
                     && subscription.getEventName().equals(messageName)) {
                 executionId = subscription.getExecutionId();
-                System.out.println("Found: "+ executionId);
+                log.info("Found: " + executionId);
                 break;
             }
         }
         return executionId;
-    }
-
-    private void randomDelay() {
-        Random random = new Random();
-        int MAX_DELAY = 20;
-        int delay = random.nextInt(MAX_DELAY);
-        try {
-            Thread.sleep(delay * 1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

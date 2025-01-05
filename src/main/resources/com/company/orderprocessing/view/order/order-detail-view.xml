@@ -13,7 +13,7 @@
                 <property name="status"/>
                 <property name="location"/>
                 <property name="processInstanceId"/>
-                <property name="orderNumber"/>
+                <property name="number"/>
             </fetchPlan>
             <loader id="orderDl"/>
         </instance>
@@ -44,7 +44,7 @@
             <select id="statusField" property="status"/>
             <textField id="locationField" property="location"/>
             <textField id="processInstanceIdField" property="processInstanceId"/>
-            <textField id="codeField" property="orderNumber"/>
+            <textField id="codeField" property="number"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveAction"/>

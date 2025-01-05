@@ -1,6 +1,8 @@
 package com.company.orderprocessing.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -10,7 +12,8 @@ import java.util.UUID;
 
 @JmixEntity
 @Table(name = "ORD_ORDER", indexes = {
-        @Index(name = "IDX_ORD_ORDER_ITEM", columnList = "ITEM_ID")
+        @Index(name = "IDX_ORD_ORDER_ITEM", columnList = "ITEM_ID"),
+        @Index(name = "IDX_ORD_ORDER_DELIVERY", columnList = "DELIVERY_ID")
 })
 @Entity(name = "ord_Order")
 public class Order {
@@ -25,7 +28,7 @@ public class Order {
 
     @InstanceName
     @Column(name = "CODE")
-    private String orderNumber;
+    private String number;
 
     @Column(name = "CUSTOMER")
     private String customer;
@@ -49,12 +52,25 @@ public class Order {
     @Column(name = "PROCESS_INSTANCE_ID")
     private String processInstanceId;
 
-    public String getOrderNumber() {
-        return orderNumber;
+    @OnDeleteInverse(DeletePolicy.CASCADE)
+    @JoinColumn(name = "DELIVERY_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Delivery delivery;
+
+    public Delivery getDelivery() {
+        return delivery;
     }
 
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
+    public void setDelivery(Delivery delivery) {
+        this.delivery = delivery;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
     }
 
     public String getProcessInstanceId() {

@@ -56,10 +56,16 @@ public class OrdProcessInstanceListView extends ProcessInstanceListView {
                 log.error("Historic process instance {} not deleted: " , id);
             }
         }
-
+        applyFilter();
         dialogs.createMessageDialog()
                 .withHeader("Success")
                 .withText("All process instances deleted")
                 .open();
     }
+
+    @Subscribe
+    public void onBeforeShow(final BeforeShowEvent event) {
+        applyFilter();
+    }
+
 }

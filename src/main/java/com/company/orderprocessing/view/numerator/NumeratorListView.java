@@ -8,16 +8,18 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
+import io.jmix.core.DataManager;
+import io.jmix.core.SaveContext;
 import io.jmix.core.validation.group.UiCrossFieldChecks;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.validation.ValidationErrors;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.button.JmixButton;
-import io.jmix.flowui.model.CollectionContainer;
-import io.jmix.flowui.model.DataContext;
-import io.jmix.flowui.model.InstanceContainer;
-import io.jmix.flowui.model.InstanceLoader;
+import io.jmix.flowui.model.*;
 import io.jmix.flowui.view.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @Route(value = "numerators", layout = MainView.class)
 @ViewController(id = "ord_Numerator.list")
@@ -25,6 +27,9 @@ import io.jmix.flowui.view.*;
 @LookupComponent("numeratorsDataGrid")
 @DialogMode(width = "64em")
 public class NumeratorListView extends StandardListView<Numerator> {
+
+    @Autowired
+    private DataManager dataManager;
 
     @ViewComponent
     private DataContext dataContext;
@@ -46,6 +51,8 @@ public class NumeratorListView extends StandardListView<Numerator> {
 
     @ViewComponent
     private HorizontalLayout detailActions;
+    @ViewComponent
+    private CollectionLoader<Numerator> numeratorsDl;
 
     @Subscribe
     public void onBeforeShow(final BeforeShowEvent event) {
@@ -119,5 +126,17 @@ public class NumeratorListView extends StandardListView<Numerator> {
 
     private ViewValidation getViewValidation() {
         return getApplicationContext().getBean(ViewValidation.class);
+    }
+
+    @Subscribe(id = "resetAllBtn", subject = "clickListener")
+    public void onResetAllBtnClick(final ClickEvent<JmixButton> event) {
+        SaveContext saveContext = new SaveContext();
+        List<Numerator> numerators = dataManager.load(Numerator.class).all().list();
+        for (Numerator numerator : numerators) {
+            numerator.setNumber(0);
+            saveContext.saving(numerator);
+        }
+        dataManager.save(saveContext);
+        numeratorsDl.load();
     }
 }

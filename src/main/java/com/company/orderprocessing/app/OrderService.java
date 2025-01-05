@@ -1,13 +1,13 @@
 package com.company.orderprocessing.app;
 
 import com.company.orderprocessing.entity.*;
+import com.company.orderprocessing.event.IncomingOrderEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
-import com.company.orderprocessing.repository.ItemRepository;
-import com.company.orderprocessing.repository.NumeratorRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.core.security.SystemAuthenticator;
+import io.jmix.flowui.UiEventPublisher;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -32,13 +32,13 @@ public class OrderService {
     @Autowired
     private UnconstrainedDataManager unconstrainedDataManager;
     @Autowired
-    private ItemRepository itemRepository;
-    @Autowired
-    private NumeratorRepository numeratorRepository;
+    private NumeratorService numeratorService;
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
     private GeoCodingService geoCodingService;
+    @Autowired
+    private UiEventPublisher uiEventPublisher;
 
     public OrderService(SystemAuthenticator systemAuthenticator) {
         this.systemAuthenticator = systemAuthenticator;
@@ -63,6 +63,7 @@ public class OrderService {
                     map);
             MDC.put("Process BK", instance.getBusinessKey());
             log.info("Order process started");
+            uiEventPublisher.publishEvent(new IncomingOrderEvent(this, json));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -71,8 +72,8 @@ public class OrderService {
     }
 
     private String generateBusinessKey() {
-        Integer value = numeratorRepository.getNextValue();
-        return value.toString();
+        Integer number = numeratorService.getNext("order");
+        return "ORD-" + number.toString();
     }
 
     public OrderRecord deserialize(String json) {
@@ -86,12 +87,15 @@ public class OrderService {
     }
 
     private Item findItemByName(String name) {
-        Optional<Item> itemOptional = itemRepository.findByName(name);
-        return itemOptional.orElse(null);
+        Item item = unconstrainedDataManager.load(Item.class)
+                .query("select e from ord_Item e where e.name = :name")
+                .parameter("name", name)
+                .one();
+        return item;
     }
 
     public boolean simulatePayment(Order order) {
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         randomDelay();
         if (randomError()) {
             log.error("Payment failed");
@@ -102,7 +106,7 @@ public class OrderService {
     }
 
     public boolean simulateCancelPayment(Order order) {
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         log.info("Payment cancelled");
         return true;
     }
@@ -136,10 +140,10 @@ public class OrderService {
         order.setQuantity(quantity);
         order.setStatus(OrderStatus.NEW);
         order.setProcessInstanceId(execution.getProcessInstanceId());
-        order.setOrderNumber(orderNumber);
+        order.setNumber(orderNumber);
         unconstrainedDataManager.save(order);
-        MDC.put("Order #", order.getOrderNumber());
-        log.info("Order created");
+        MDC.put("Order #", order.getNumber());
+        log.info("Order created: {}", order.getNumber());
         return order;
     }
 
@@ -155,8 +159,8 @@ public class OrderService {
         };
         order.setStatus(status);
         unconstrainedDataManager.save(order);
-        MDC.put("Order #", order.getOrderNumber());
-        log.info("Status set: {}", status);
+        MDC.put("Order #", order.getNumber());
+        log.info("Order #: {}, Status set: {}", order.getNumber(), status);
     }
 
     private boolean reservationGeneral(Order order, ReservationSign sign) {
@@ -169,12 +173,9 @@ public class OrderService {
             direction = -1;
             message = "Reservation canceling";
         }
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         UUID id = order.getItem().getId();
-        Optional<Item> itemOptional = itemRepository.findById(id);
-        if (itemOptional.isEmpty()) return false;
-
-        Item item = itemOptional.get();
+        Item item = findItemByName(order.getItem().getName());
         Integer reserve = order.getQuantity() * direction;
 
         int availableQty = item.getTotalQuantity() - item.getReserved();
@@ -189,19 +190,19 @@ public class OrderService {
     }
 
     public boolean doReservation(Order order) {
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         log.info("Doing reservation");
         return reservationGeneral(order, ReservationSign.PLUS);
     }
 
     public boolean cancelReservation(Order order) {
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         log.info("Cancelling reservation");
         return reservationGeneral(order, ReservationSign.MINUS);
     }
 
     public void addressVerification(Order order) {
-        MDC.put("Order #", order.getOrderNumber());
+        MDC.put("Order #", order.getNumber());
         String address = order.getAddress();
         Point point = geoCodingService.verifyAddress(address);
         if (point != null) {

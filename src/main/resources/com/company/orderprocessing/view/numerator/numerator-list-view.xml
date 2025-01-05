@@ -35,6 +35,7 @@
                 <hbox id="buttonsPanel" classNames="buttons-panel">
                     <button id="createButton" action="numeratorsDataGrid.create"/>
                     <button id="readButton" action="numeratorsDataGrid.read"/>
+                    <button id="resetAllBtn" text="Reset all"/>
                     <simplePagination id="pagination" dataLoader="numeratorsDl"/>
                 </hbox>
                 <dataGrid id="numeratorsDataGrid"

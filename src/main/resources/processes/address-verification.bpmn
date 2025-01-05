@@ -3,9 +3,7 @@
   <process id="address-verification" name="Address verification" isExecutable="true">
     <startEvent id="startEvent1">
       <extensionElements>
-        <jmix:processVariables>
-          <jmix:processVariable name="address" type="string" />
-        </jmix:processVariables>
+        <jmix:processVariables />
       </extensionElements>
       <outgoing>Flow_18lp63d</outgoing>
     </startEvent>
@@ -60,7 +58,7 @@
       <outgoing>Flow_0p0vqld</outgoing>
     </serviceTask>
     <sequenceFlow id="Flow_1745bhs" sourceRef="Activity_0osmd8v" targetRef="Gateway_09onbq5" />
-    <scriptTask id="Activity_0osmd8v" name="counter++" flowable:async="true" scriptFormat="groovy">
+    <scriptTask id="Activity_0osmd8v" name="counter++" scriptFormat="groovy">
       <incoming>Flow_02p1irt</incoming>
       <outgoing>Flow_1745bhs</outgoing>
       <script>// Ensure counter is initialized
@@ -86,7 +84,7 @@ println "Counter: ${counter + 1}"
       <conditionExpression xsi:type="tFormalExpression">${counter == 3}</conditionExpression>
     </sequenceFlow>
     <sequenceFlow id="Flow_0e40gcw" sourceRef="Activity_0j7p8cm" targetRef="Gateway_09onbq5" />
-    <scriptTask id="Activity_0j7p8cm" name="counter = 0" flowable:async="true" scriptFormat="groovy">
+    <scriptTask id="Activity_0j7p8cm" name="counter = 0" scriptFormat="groovy">
       <incoming>Flow_18lp63d</incoming>
       <outgoing>Flow_0e40gcw</outgoing>
       <script>execution.setVariable("counter", 0)</script>
@@ -126,27 +124,11 @@ println "Counter: ${counter + 1}"
   <message id="address-OK" name="Address OK" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
     <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="address-verification">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
+        <omgdc:Bounds x="12" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_09onbq5_di" bpmnElement="Gateway_09onbq5" isMarkerVisible="true">
         <omgdc:Bounds x="245" y="143" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1na4awx_di" bpmnElement="Gateway_1na4awx" isMarkerVisible="true">
-        <omgdc:Bounds x="325" y="143" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_19bosjn_di" bpmnElement="Activity_0j7p8cm">
-        <omgdc:Bounds x="100" y="128" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1fbjeib_di" bpmnElement="Activity_1m3q7ji">
-        <omgdc:Bounds x="420" y="128" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1fgsxvr_di" bpmnElement="Activity_0osmd8v">
-        <omgdc:Bounds x="420" y="-40" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1507ite_di" bpmnElement="Activity_0xgqj6e">
-        <omgdc:Bounds x="420" y="240" width="100" height="80" />
-        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0hsfiqf_di" bpmnElement="Gateway_0dmoin6">
         <omgdc:Bounds x="605" y="143" width="50" height="50" />
@@ -166,21 +148,37 @@ println "Counter: ${counter + 1}"
           <omgdc:Bounds x="708" y="305" width="25" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ja16pi_di" bpmnElement="Event_0ja16pi">
+        <omgdc:Bounds x="802" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1fbjeib_di" bpmnElement="Activity_1m3q7ji">
+        <omgdc:Bounds x="420" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1fgsxvr_di" bpmnElement="Activity_0osmd8v">
+        <omgdc:Bounds x="420" y="-40" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1na4awx_di" bpmnElement="Gateway_1na4awx" isMarkerVisible="true">
+        <omgdc:Bounds x="325" y="143" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_19bosjn_di" bpmnElement="Activity_0j7p8cm">
+        <omgdc:Bounds x="100" y="128" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0xu0yjp_di" bpmnElement="Event_1snsy68">
+        <omgdc:Bounds x="562" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1507ite_di" bpmnElement="Activity_0xgqj6e">
+        <omgdc:Bounds x="420" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_05t6nog_di" bpmnElement="Event_080izh6">
         <omgdc:Bounds x="912" y="262" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1245h0b_di" bpmnElement="Activity_08f6y02">
         <omgdc:Bounds x="780" y="240" width="100" height="80" />
         <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0ja16pi_di" bpmnElement="Event_0ja16pi">
-        <omgdc:Bounds x="802" y="150" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0xu0yjp_di" bpmnElement="Event_1snsy68">
-        <omgdc:Bounds x="562" y="262" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
-        <omgdc:Bounds x="12" y="150" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_18lp63d_di" bpmnElement="Flow_18lp63d">
         <omgdi:waypoint x="48" y="168" />

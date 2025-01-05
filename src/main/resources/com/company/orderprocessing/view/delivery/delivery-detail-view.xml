@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://deliveryDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="deliveryDc"
+                  class="com.company.orderprocessing.entity.Delivery">
+            <fetchPlan extends="_base">
+                <property name="orders" fetchPlan="_base">
+                    <property name="item" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="deliveryDl"/>
+            <collection id="ordersDc" property="orders"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="deliveryDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+            </responsiveSteps>
+            <textField id="numberField" property="number"/>
+            <dateTimePicker id="timestampField" property="timestamp"/>
+        </formLayout>
+        <h4 text="msg://com.company.orderprocessing.entity/Delivery.orders"/>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <button action="ordersDataGrid.create"/>
+            <button action="ordersDataGrid.edit"/>
+            <button action="ordersDataGrid.remove"/>
+        </hbox>
+        <dataGrid id="ordersDataGrid" dataContainer="ordersDc" width="100%" minHeight="20em">
+            <actions>
+                <action id="create" type="list_create">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="edit" type="list_edit">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="remove" type="list_remove"/>
+            </actions>
+            <columns>
+                <column property="orderNumber"/>
+                <column property="customer"/>
+                <column property="address"/>
+                <column property="quantity"/>
+                <column property="status"/>
+                <column property="location"/>
+                <column property="processInstanceId"/>
+                <column property="item"/>
+            </columns>
+        </dataGrid>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>
