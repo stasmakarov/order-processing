@@ -1,6 +1,8 @@
 package com.company.orderprocessing.view.processinstancelist;
 
+import com.company.orderprocessing.event.RefreshViewEvent;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.Route;
 import io.jmix.bpmflowui.view.processinstance.ProcessInstanceListView;
 import io.jmix.flowui.Dialogs;
@@ -16,14 +18,19 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @Route(value = "bpm/processinstances", layout = DefaultMainViewParent.class)
 @ViewController(id = "bpm_ProcessInstance.list")
 @ViewDescriptor(path = "ord-process-instance-list-view.xml")
 public class OrdProcessInstanceListView extends ProcessInstanceListView {
+
     private static final Logger log = LoggerFactory.getLogger(OrdProcessInstanceListView.class);
+
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
@@ -65,6 +72,11 @@ public class OrdProcessInstanceListView extends ProcessInstanceListView {
 
     @Subscribe
     public void onBeforeShow(final BeforeShowEvent event) {
+        applyFilter();
+    }
+
+    @EventListener
+    public void onProcessStarted(final RefreshViewEvent event) {
         applyFilter();
     }
 

@@ -21,7 +21,7 @@
     <sequenceFlow id="Flow_1b1tb6y" sourceRef="Activity_1sa9qd6" targetRef="Gateway_1q9ehdh" />
     <sequenceFlow id="Flow_0kwom7c" sourceRef="Gateway_1q9ehdh" targetRef="Activity_1aada8n" />
     <sequenceFlow id="Flow_0vg8lda" sourceRef="Activity_1aada8n" targetRef="Activity_12b4y2n" />
-    <serviceTask id="Activity_00pks50" name="Send delivery message" flowable:async="true" flowable:expression="${ord_DeliveryService.sendMessage(orders_item)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <serviceTask id="Activity_00pks50" name="Send delivery message" flowable:expression="${ord_DeliveryService.sendMessage(orders_item)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="sendMessage">
           <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">orders_item</jmix:methodParam>
@@ -47,7 +47,7 @@
     <startEvent id="startEvent1">
       <outgoing>Flow_1ohq3pn</outgoing>
     </startEvent>
-    <serviceTask id="Activity_1aada8n" name="Create delivery" flowable:async="true" flowable:expression="${ord_DeliveryService.createDelivery(orders)}" flowable:resultVariable="deliveryNumber" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <serviceTask id="Activity_1aada8n" name="Create delivery" flowable:expression="${ord_DeliveryService.createDelivery(orders)}" flowable:resultVariable="deliveryNumber" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="createDelivery">
           <jmix:methodParam name="orders" type="java.util.List&#60;com.company.orderprocessing.entity.Order&#62;" isVariable="true">orders</jmix:methodParam>
@@ -74,7 +74,7 @@
       <outgoing>Flow_1b1tb6y</outgoing>
     </serviceTask>
     <textAnnotation id="TextAnnotation_0zoqv6h">
-      <text>Запуск по расписанию при помощи Quartz</text>
+      <text>Start by Quartz</text>
     </textAnnotation>
     <association id="Association_14ekqzg" sourceRef="startEvent1" targetRef="TextAnnotation_0zoqv6h" />
   </process>
@@ -116,7 +116,7 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="TextAnnotation_0zoqv6h_di" bpmnElement="TextAnnotation_0zoqv6h">
-        <omgdc:Bounds x="190" y="70" width="140" height="40" />
+        <omgdc:Bounds x="190" y="70" width="139.99887858851676" height="26.315789473684212" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0tiilg9_di" bpmnElement="Flow_0tiilg9">
@@ -163,7 +163,7 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Association_14ekqzg_di" bpmnElement="Association_14ekqzg">
         <omgdi:waypoint x="180" y="155" />
-        <omgdi:waypoint x="218" y="110" />
+        <omgdi:waypoint x="230" y="96" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

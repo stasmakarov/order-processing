@@ -44,7 +44,6 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    runtimeOnly 'org.hsqldb:hsqldb'
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
@@ -69,6 +68,7 @@ dependencies {
 //    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.4.0'
     implementation 'com.google.code.gson:gson:2.11.0'
 
+    implementation 'org.postgresql:postgresql'
 }
 
 configurations.implementation {

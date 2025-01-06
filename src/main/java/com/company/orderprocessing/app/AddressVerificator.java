@@ -1,6 +1,6 @@
 package com.company.orderprocessing.app;
 
-import com.company.orderprocessing.event.RequestEventPublisher;
+import com.company.orderprocessing.publisher.RequestEventPublisher;
 import com.company.orderprocessing.nominatim.GeoCodingService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.delegate.DelegateExecution;

@@ -9,6 +9,8 @@ import org.flowable.engine.RuntimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component("ord_OrderEventListener")
@@ -51,26 +53,29 @@ public class OrderEventListener {
      * order status changes.
      * </p>
      */
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener
     public void onOrderChangedAfterCommit(final EntityChangedEvent<Order> event) {
         if (!event.getChanges().isChanged("status")
                 || event.getType() == EntityChangedEvent.Type.DELETED) return;
 
-        systemAuthenticator.withSystem(() -> {
-            try {
-                long count = dataManager.loadValue(
-                        "select count(e) from ord_Order e where e.status = :status", Long.class)
-                        .parameter("status", OrderStatus.READY)
-                        .one();
-                if (count > READY_ORDERS_LIMIT) {
-                    log.info("Number of orders with status READY: " + count
-                            + "\nThe delivery process will be started.");
-                    runtimeService.startProcessInstanceByMessage(MESSAGE_NAME);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        systemAuthenticator.begin();
+        try {
+            long count = dataManager.loadValue(
+                    "select count(e) from ord_Order e where e.status = :status", Long.class)
+                    .parameter("status", OrderStatus.READY)
+                    .one();
+
+            if (count > READY_ORDERS_LIMIT) {
+                log.info("Number of orders with status READY: " + count
+                        + "\nThe delivery process will be started.");
+                runtimeService.startProcessInstanceByMessage(MESSAGE_NAME);
             }
-            return null;
-        });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            systemAuthenticator.end();
+        }
     }
 }
