@@ -11,7 +11,7 @@
             </fetchPlan>
             <loader id="ordersDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from ord_Order e]]>
+                    <![CDATA[select e from ord_Order e order by e.number desc]]>
                 </query>
             </loader>
         </collection>
@@ -30,7 +30,7 @@
     <layout>
         <split id="split" width="100%" themeNames="splitter-spacing" splitterPosition="45">
             <vbox>
-                <genericFilter id="genericFilter" opened="false"
+                <genericFilter id="genericFilter" opened="false" visible="false"
                                dataLoader="ordersDl">
                     <properties include=".*"/>
                 </genericFilter>
@@ -53,9 +53,10 @@
                         </hbox>
                     </vbox>
                 </hbox>
-                <dataGrid id="ordersDataGrid" pageSize="200" allRowsVisible="true"
+                <dataGrid id="ordersDataGrid" pageSize="200"
+                          allRowsVisible="true"
                           width="100%"
-                          minHeight="20em"
+                          minHeight="33em"
                           dataContainer="ordersDc"
                           columnReorderingAllowed="true"
                           selectionMode="SINGLE">
@@ -66,8 +67,8 @@
                         <action id="remove" type="list_remove"/>
                     </actions>
                     <columns resizable="true">
-                        <column property="number"/>
-                        <column property="status"/>
+                        <column property="number" width="3em"/>
+                        <column property="status" width="3em"/>
                         <column property="address"/>
                     </columns>
                 </dataGrid>
@@ -76,25 +77,25 @@
                     <button id="discardButton" action="discardAction"/>
                 </hbox>
             </vbox>
-            <vbox id="mapBox" width="100%">
+            <vbox id="mapBox" width="100%" height="100%">
                 <maps:geoMap id="map" height="100%" width="100%">
                     <maps:layers>
                         <maps:tile>
                             <maps:osmSource/>
                         </maps:tile>
                         <maps:vector id="ordersLayer">
-                            <maps:dataVectorSource id="dataVectorSource"
+                            <maps:dataVectorSource id="dataVectorSource1"
                                                    dataContainer="ordersDc"
                                                    property="location"/>
                         </maps:vector>
                     </maps:layers>
                     <!-- Define the boundaries for Moscow -->
-                    <maps:mapView centerY="55.7558"
-                                  centerX="37.6173">
-                        <maps:extent minX="37.3219"
-                                     minY="55.4092"
-                                     maxX="37.8925"
-                                     maxY="55.9021"/>
+                    <maps:mapView centerX="37.617664"
+                                  centerY="55.752121">
+                        <maps:extent minX="36.9615"
+                                     minY="55.2290"
+                                     maxX="38.2529"
+                                     maxY="56.0823"/>
                     </maps:mapView>
                 </maps:geoMap>
             </vbox>

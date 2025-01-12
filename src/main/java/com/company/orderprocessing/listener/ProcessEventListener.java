@@ -28,10 +28,13 @@ public class ProcessEventListener {
         ProcessDefinition processDefinition = event.getProcessDefinition();
         String name = processDefinition.getName() == null ? processDefinition.getId() : processDefinition.getName();
         log.info("Process started: {}", name);
-        systemAuthenticator.withSystem(() -> {
+
+        systemAuthenticator.begin("admin");
+        try {
             uiEventPublisher.publishEvent(new RefreshViewEvent(this));
-            return null;
-        });
+        } finally {
+            systemAuthenticator.end();
+        }
     }
 
     @EventListener

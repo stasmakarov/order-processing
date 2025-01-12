@@ -1,36 +1,49 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:charts="http://jmix.io/schema/charts/ui"
       title="msg://demoView.title">
     <layout>
-        <vbox>
-            <h4 text="Read orders from RabbitMQ"/>
-            <hbox>
-                <button id="startReadingBtn" text="Start"/>
-                <button id="stopReadingBtn" text="Stop"/>
-            </hbox>
-        </vbox>
-        <vbox visible="false">
-            <h4 text="msg://Manufacturing"/>
-            <hbox>
-                <button id="manufacturingStartBtn" text="Start"/>
-                <button id="manufacturingPauseBtn" text="Pause"/>
-                <button id="manufacturingResumeBtn" text="Resume"/>
-                <button id="manufacturingStopBtn" text="Stop"/>
-            </hbox>
-        </vbox>
-        <vbox>
-            <h4 text="Delivery"/>
-            <hbox>
-                <textField id="instanceIdField" datatype="string" label="Order number"/>
-                <textField id="eventNameField" datatype="string" label="Event Name" visible="false"/>
-            </hbox>
-            <button id="sendMessageBtn" text="Send Message"/>
-        </vbox>
-        <hbox visible="false">
-            <textField id="targetExecutionField" datatype="string" label="Target Execution" />
+        <hbox>
+            <vbox>
+                <h4 text="Read orders from RabbitMQ"/>
+                <hbox>
+                    <button id="startReadingBtn" text="Start"/>
+                    <button id="stopReadingBtn" text="Stop"/>
+                </hbox>
+            </vbox>
+            <vbox visible="true">
+                <h4 text="msg://Manufacturing"/>
+                <hbox>
+                    <button id="manufacturingStartBtn" text="Start"/>
+                    <button id="manufacturingPauseBtn" text="Pause"/>
+                    <button id="manufacturingResumeBtn" text="Resume"/>
+                    <button id="manufacturingStopBtn" text="Stop"/>
+                </hbox>
+            </vbox>
         </hbox>
-        <button id="findExecution" text="Find Execution" visible="false"/>
-        <button id="allSubsBtn" text="All Subscriptions" visible="false"/>
-        <button id="startById" text="Start by Def. Id" visible="false"/>
-    </layout>
+        <hbox>
+            <vbox>
+                <h4 text="Orders"/>
+                <h1 id="totalOrdersField"/>
+            </vbox>
+            <vbox>
+                <charts:chart id="ordersChart" colorPalette="DARKCYAN"
+                              height="100%" minHeight="25em"
+                              alignSelf="STRETCH">
+                    <charts:series>
+                        <charts:bar name="Orders"/>
+                    </charts:series>
+                    <charts:xAxes>
+                        <charts:xAxis/>
+                    </charts:xAxes>
+                    <charts:yAxes>
+                        <charts:yAxis alignTicks="true">
+                            <charts:axisLabel
+                                    formatterFunction="function(value){return value;}"/>
+                        </charts:yAxis>
+                    </charts:yAxes>
+                </charts:chart>
+            </vbox>
+        </hbox>
+     </layout>
 </view>

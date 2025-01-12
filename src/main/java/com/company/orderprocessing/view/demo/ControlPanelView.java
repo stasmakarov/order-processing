@@ -1,41 +1,56 @@
 package com.company.orderprocessing.view.demo;
 
 
+import com.company.orderprocessing.entity.OrderStatus;
 import com.company.orderprocessing.event.DeliveryCompletedEvent;
 import com.company.orderprocessing.event.IncomingOrderEvent;
 import com.company.orderprocessing.rabbit.RabbitService;
+import com.company.orderprocessing.repository.OrderRepository;
 import com.company.orderprocessing.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.Route;
+import io.jmix.chartsflowui.component.Chart;
+import io.jmix.chartsflowui.data.item.MapDataItem;
+import io.jmix.chartsflowui.kit.component.model.DataSet;
+import io.jmix.chartsflowui.kit.data.chart.ListChartItems;
+import io.jmix.core.DataManager;
 import io.jmix.flowui.Notifications;
-import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.view.*;
 import org.flowable.engine.RuntimeService;
-import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
-import org.flowable.eventsubscription.api.EventSubscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Route(value = "control-panel-view", layout = MainView.class)
 @ViewController(id = "ord_ControlPanelView")
 @ViewDescriptor(path = "control-panel-view.xml")
 public class ControlPanelView extends StandardView {
-    @ViewComponent
-    private TypedTextField<String> instanceIdField;
-    @ViewComponent
-    private TypedTextField<String> eventNameField;
-    @ViewComponent
-    private TypedTextField<String> targetExecutionField;
+    private static final Logger log = LoggerFactory.getLogger(ControlPanelView.class);
+
+    private static final String ORDER_PROCESSING = "order-processing";
+    private static final String ADDRESS_VERIFICATION = "address-verification";
+    private static final String PAYMENT_AND_RESERVATION = "payment-and-reservation";
+    private static final String DELIVERY_PROCESS = "delivery-process";
+    private static final String MANUFACTURING_PROCESS = "manufacturing-process";
+
     @ViewComponent
     private JmixButton startReadingBtn;
     @ViewComponent
     private JmixButton stopReadingBtn;
 
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private DataManager dataManager;
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
@@ -50,6 +65,50 @@ public class ControlPanelView extends StandardView {
     private JmixButton manufacturingResumeBtn;
     @ViewComponent
     private JmixButton manufacturingStopBtn;
+    @ViewComponent
+    private Chart ordersChart;
+
+    private Map<String, Integer> processes;
+    private Map<OrderStatus, Long> orders = new HashMap<>();
+    private Long totalOrders;
+    @ViewComponent
+    private H1 totalOrdersField;
+
+    @Subscribe
+    public void onInit(final InitEvent event) {
+        updateCharts();
+    }
+
+    private void countOrders() {
+        for (OrderStatus status : OrderStatus.values()) {
+//            long count = orderRepository.countByStatus(status.getId());
+            long count = dataManager.loadValue(
+                            "select count(e) from ord_Order e where e.status = :status", Long.class)
+                    .parameter("status", status.getId())
+                    .one();
+            orders.put(status, count);
+        }
+//        totalOrders = orderRepository.countTotal();
+        totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
+    }
+
+    private void updateCharts() {
+        totalOrdersField.setText(totalOrders != null ? totalOrders.toString() : "0");
+        ordersChart.withDataSet(
+                new DataSet().withSource(new DataSet.Source<MapDataItem>()
+                        .withDataProvider(getOrderCountersMap())
+                        .withCategoryField("description")
+                        .withValueField("value"))
+        );
+    }
+
+    private ListChartItems<MapDataItem> getOrderCountersMap() {
+        countOrders();
+        ListChartItems<MapDataItem> mapChartItems = new ListChartItems<>();
+        orders.forEach((key, value) ->
+                mapChartItems.addItem(new MapDataItem(Map.of("value", value, "description", key.name()))));
+        return mapChartItems;
+    }
 
     @Subscribe
     public void onBeforeShow(final BeforeShowEvent event) {
@@ -62,57 +121,6 @@ public class ControlPanelView extends StandardView {
         }
     }
 
-
-    @Subscribe(id = "findExecution", subject = "clickListener")
-    public void onFindExecutionClick(final ClickEvent<JmixButton> event) {
-        String instanceId = instanceIdField.getTypedValue();
-        String eventName = eventNameField.getTypedValue();
-        List<EventSubscription> messageSubscriptions = runtimeService.createEventSubscriptionQuery()
-                .list();
-        messageSubscriptions.stream().map(EventSubscription::getExecutionId).forEach(System.out::println);
-
-//        messageSubscriptions.stream()
-//                .filter(m -> m.getProcessInstanceId().equals(instanceId) && m.getEventName().equals(eventName))
-//                .map(EventSubscription::getExecutionId)
-//                .findFirst()
-//                .ifPresent(executionId -> {
-//                    targetExecutionField.setValue(executionId);
-//                    System.out.println("Found: "+executionId);
-//                });
-
-        for (EventSubscription subscription : messageSubscriptions) {
-            if (subscription.getProcessInstanceId().equals(instanceId)
-                    && subscription.getEventName().equals(eventName)) {
-                String executionId = subscription.getExecutionId();
-                targetExecutionField.setValue(executionId);
-                System.out.println("Found: "+executionId);
-                break;
-            }
-        }
-    }
-
-    @Subscribe(id = "sendMessageBtn", subject = "clickListener")
-    public void onSendMessageBtnClick(final ClickEvent<JmixButton> event) {
-        String eventName = "Order delivered";
-        String orderNumber = instanceIdField.getValue();
-        ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
-                .processInstanceBusinessKey(orderNumber)
-                .singleResult();
-        if (processInstance == null) return;
-        Execution execution = runtimeService.createExecutionQuery()
-                .messageEventSubscriptionName(eventName)
-                .parentId(processInstance.getId())
-                .singleResult();
-        if (execution == null) return;
-        runtimeService.messageEventReceivedAsync(eventName, execution.getId());
-    }
-
-    @Subscribe(id = "allSubsBtn", subject = "clickListener")
-    public void onAllSubsBtnClick(final ClickEvent<JmixButton> event) {
-        List<EventSubscription> messageSubscriptions = runtimeService.createEventSubscriptionQuery()
-                .list();
-        messageSubscriptions.stream().map(EventSubscription::getExecutionId).forEach(System.out::println);
-    }
 
     @Subscribe(id = "startReadingBtn", subject = "clickListener")
     public void onStartReadingBtnClick(final ClickEvent<JmixButton> event) {
@@ -128,7 +136,6 @@ public class ControlPanelView extends StandardView {
         stopReadingBtn.setEnabled(false);
     }
 
-    private final static String MANUFACTURING_PROCESS = "manufacturing-process";
     private final static String MAN_START_SIGNAL = "Manufacturing start";
     private final static String MAN_PAUSE_SIGNAL = "Manufacturing pause";
     private final static String MAN_RESUME_SIGNAL = "Manufacturing resume";
@@ -162,12 +169,6 @@ public class ControlPanelView extends StandardView {
                 .withType(Notifications.Type.ERROR).show();
     }
 
-    @Subscribe(id = "startById", subject = "clickListener")
-    public void onStartByIdClick(final ClickEvent<JmixButton> event) {
-        String value = instanceIdField.getTypedValue();
-        ProcessInstance instance = runtimeService.startProcessInstanceById(value);
-        notifications.create("Process started: " + instance.getName()).show();
-    }
 
     @EventListener
     private void onIncomingOrder(IncomingOrderEvent event) {
@@ -185,5 +186,25 @@ public class ControlPanelView extends StandardView {
                 .withPosition(Notification.Position.TOP_END)
                 .withType(Notifications.Type.SUCCESS)
                 .show();
+    }
+
+    private void countProcesses() {
+        List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery().active().list();
+        for (ProcessInstance processInstance : processInstances) {
+            String definitionKey = processInstance.getProcessDefinitionKey();
+            switch (definitionKey) {
+                case ORDER_PROCESSING ->
+                        processes.put(ORDER_PROCESSING, processes.get(ORDER_PROCESSING) + 1);
+                case ADDRESS_VERIFICATION ->
+                        processes.put(ADDRESS_VERIFICATION, processes.get(ADDRESS_VERIFICATION) + 1);
+                case PAYMENT_AND_RESERVATION ->
+                        processes.put(PAYMENT_AND_RESERVATION, processes.get(PAYMENT_AND_RESERVATION) + 1);
+                case DELIVERY_PROCESS ->
+                        processes.put(PAYMENT_AND_RESERVATION, processes.get(PAYMENT_AND_RESERVATION) + 1);
+                case MANUFACTURING_PROCESS ->
+                        processes.put(MANUFACTURING_PROCESS, processes.get(MANUFACTURING_PROCESS) + 1);
+                default -> log.warn("Unknown process: {}", definitionKey);
+            }
+        }
     }
 }

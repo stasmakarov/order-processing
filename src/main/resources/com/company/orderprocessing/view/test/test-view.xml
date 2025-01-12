@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://testView.title">
+    <layout>
+        <textField id="nameField" label="Message name"/>
+        <button id="startBtn" text="Start process"/>
+    </layout>
+</view>

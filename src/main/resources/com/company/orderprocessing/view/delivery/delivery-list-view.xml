@@ -13,6 +13,16 @@
                 </query>
             </loader>
         </collection>
+        <instance id="deliveryDc"
+                  class="com.company.orderprocessing.entity.Delivery">
+            <fetchPlan extends="_base">
+                <property name="orders" fetchPlan="_base">
+                    <property name="item" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="deliveryDl"/>
+            <collection id="ordersDc" property="orders"/>
+        </instance>
     </data>
     <facets>
         <dataLoadCoordinator auto="true"/>
@@ -24,27 +34,70 @@
         <action id="selectAction" type="lookup_select"/>
         <action id="discardAction" type="lookup_discard"/>
     </actions>
-    <layout>
-        <hbox id="buttonsPanel" classNames="buttons-panel">
-            <button id="readButton" action="deliveriesDataGrid.read"/>
-            <simplePagination id="pagination" dataLoader="deliveriesDl"/>
-        </hbox>
-        <dataGrid id="deliveriesDataGrid"
-                  width="100%"
-                  minHeight="20em"
-                  dataContainer="deliveriesDc"
-                  columnReorderingAllowed="true">
-            <actions>
-                <action id="read" type="list_read"/>
-            </actions>
-            <columns resizable="true">
-                <column property="number"/>
-                <column property="timestamp"/>
-            </columns>
-        </dataGrid>
-        <hbox id="lookupActions" visible="false">
-            <button id="selectButton" action="selectAction"/>
-            <button id="discardButton" action="discardAction"/>
-        </hbox>
+    <layout padding="false">
+        <formLayout id="layoutWrapper" classNames="master-detail-layout" height="100%">
+            <vbox id="listLayout" height="100%" width="40%">
+                <hbox id="buttonsPanel" classNames="buttons-panel">
+                    <button id="readButton" action="deliveriesDataGrid.read"/>
+                    <button id="refreshButton" action="deliveriesDataGrid.refresh"/>
+                    <button id="removeAllButton" text="Remove all"/>
+                    <simplePagination id="pagination" dataLoader="deliveriesDl"/>
+                </hbox>
+                <dataGrid id="deliveriesDataGrid"
+                          width="100%"
+                          minHeight="20em"
+                          dataContainer="deliveriesDc"
+                          columnReorderingAllowed="true">
+                    <actions>
+                        <action id="read" type="list_read"/>
+                        <action id="refresh" type="list_refresh"/>
+                    </actions>
+                    <columns resizable="true">
+                        <column property="number"/>
+                        <column property="timestamp"/>
+                    </columns>
+                </dataGrid>
+                <hbox id="lookupActions" visible="false">
+                    <button id="selectButton" action="selectAction"/>
+                    <button id="discardButton" action="discardAction"/>
+                </hbox>
+            </vbox>
+            <vbox id="detailsLayout" height="100%">
+                <formLayout id="form" dataContainer="deliveryDc">
+                    <responsiveSteps>
+                        <responsiveStep minWidth="0" columns="1"/>
+                        <responsiveStep minWidth="40em" columns="2"/>
+                    </responsiveSteps>
+                    <textField id="numberField" property="number"/>
+                    <dateTimePicker id="timestampField" property="timestamp"/>
+                </formLayout>
+                <dataGrid id="ordersDataGrid" dataContainer="ordersDc" width="100%" minHeight="20em">
+                    <actions>
+                        <action id="create" type="list_create">
+                            <properties>
+                                <property name="openMode" value="DIALOG"/>
+                            </properties>
+                        </action>
+                        <action id="edit" type="list_edit">
+                            <properties>
+                                <property name="openMode" value="DIALOG"/>
+                            </properties>
+                        </action>
+                        <action id="remove" type="list_remove"/>
+                    </actions>
+                    <columns>
+                        <column property="number"/>
+                        <column property="quantity"/>
+                        <column property="item"/>
+                        <column property="status"/>
+                    </columns>
+                </dataGrid>
+
+                <hbox id="detailActions">
+                    <button id="saveButton" text="msg:///actions.Save" icon="CHECK" themeNames="primary"/>
+                    <button id="cancelButton" text="msg:///actions.Cancel" icon="BAN"/>
+                </hbox>
+            </vbox>
+        </formLayout>
     </layout>
 </view>

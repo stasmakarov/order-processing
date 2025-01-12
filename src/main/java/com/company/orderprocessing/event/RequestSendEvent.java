@@ -1,20 +1,22 @@
 package com.company.orderprocessing.event;
 
+import com.company.orderprocessing.entity.Order;
 import org.springframework.context.ApplicationEvent;
 
 public class RequestSendEvent extends ApplicationEvent {
 
-    private final String address;
+    private final Order order;
     private final String processInstanceId;
 
-    public RequestSendEvent(Object source, String address, String processInstanceId) {
+    public RequestSendEvent(Object source, Order order, String processInstanceId) {
         super(source);
-        this.address = address;
+        this.order = order;
         this.processInstanceId = processInstanceId;
     }
 
-    public String getAddress() {
-        return address;
+
+    public Order getOrder() {
+        return order;
     }
 
     public String getProcessInstanceId() {

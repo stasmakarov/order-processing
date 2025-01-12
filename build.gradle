@@ -69,6 +69,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
 
     implementation 'org.postgresql:postgresql'
+    implementation 'io.jmix.appsettings:jmix-appsettings-flowui-starter'
+    implementation 'io.jmix.appsettings:jmix-appsettings-starter'
 }
 
 configurations.implementation {

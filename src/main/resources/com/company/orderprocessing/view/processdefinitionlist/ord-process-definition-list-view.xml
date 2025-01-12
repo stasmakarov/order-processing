@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.title">
+    <data>
+        <collection id="processDefinitionsDc" class="io.jmix.bpm.entity.ProcessDefinitionData"/>
+    </data>
+    <actions>
+        <action id="applyFilter" text="msg:///actions.Apply" icon="SEARCH"/>
+    </actions>
+    <layout>
+        <details opened="true" width="100%" summaryText="msg://io.jmix.bpmflowui.view/filter">
+            <formLayout>
+                <responsiveSteps>
+                    <responsiveStep minWidth="0" columns="1"/>
+                    <responsiveStep minWidth="28em" columns="2"/>
+                    <responsiveStep minWidth="42em" columns="3"/>
+                    <responsiveStep minWidth="56em" columns="4"/>
+                </responsiveSteps>
+                <textField id="nameField"
+                           label="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.nameContains"/>
+                <textField id="keyField"
+                           label="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.keyContains"/>
+                <checkbox id="lastVersionOnlyCb"
+                          label="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.lastVersionOnly"/>
+                <button id="applyFilterBtn" action="applyFilter"/>
+            </formLayout>
+        </details>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <button id="openInModelerBtn"
+                    action="processDefinitionsGrid.openInModeler"/>
+            <button id="viewDetailsBtn"
+                    action="processDefinitionsGrid.viewDetails"/>
+            <button id="startProcessBtn"
+                    action="processDefinitionsGrid.startProcess"/>
+            <fileUploadField id="bpmnXmlUploadField"
+                             uploadText="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.uploadBpmnXml"
+                             uploadIcon="UPLOAD"/>
+            <button id="deleteAllBtn" text="Delete all"/>
+        </hbox>
+        <dataGrid id="processDefinitionsGrid"
+                  dataContainer="processDefinitionsDc"
+                  width="100%"
+                  minHeight="20em">
+            <actions>
+                <action id="openInModeler"
+                        text="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.openInModeler"
+                        icon="PENCIL"
+                        type="list_itemTracking"
+                />
+                <action id="viewDetails"
+                        text="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.viewDetails"
+                        icon="EYE"
+                        type="list_itemTracking"
+                />
+                <action id="startProcess"
+                        text="msg://io.jmix.bpmflowui.view.processdefinition/processDefinitionList.startProcess"
+                        icon="PLAY"
+                        type="list_itemTracking"
+                />
+            </actions>
+            <columns resizable="true">
+                <column property="name"/>
+                <column property="key"/>
+                <column property="version"/>
+            </columns>
+        </dataGrid>
+    </layout>
+</view>

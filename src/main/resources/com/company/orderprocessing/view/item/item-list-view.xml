@@ -36,6 +36,7 @@
                     <button id="createButton" action="itemsDataGrid.create"/>
                     <button id="editButton" action="itemsDataGrid.edit"/>
                     <button id="removeButton" action="itemsDataGrid.remove"/>
+                    <button id="resetButton" text="Reset"/>
                     <simplePagination id="pagination" dataLoader="itemsDl"/>
                 </hbox>
                 <dataGrid id="itemsDataGrid"
@@ -50,9 +51,9 @@
                     </actions>
                     <columns resizable="true">
                         <column property="name"/>
-                        <column property="description"/>
                         <column property="totalQuantity"/>
                         <column property="reserved"/>
+                        <column property="delivered"/>
                     </columns>
                 </dataGrid>
                 <hbox id="lookupActions" visible="false">
@@ -70,6 +71,7 @@
                     <textArea id="descriptionField" height="9.5em" property="description"/>
                     <textField id="totalQuantityField" property="totalQuantity"/>
                     <textField id="reservedField" property="reserved"/>
+                    <textField id="deliveredField" property="delivered"/>
                 </formLayout>
                 <hbox id="detailActions">
                     <button id="saveButton" text="msg:///actions.Save" icon="CHECK" themeNames="primary"/>

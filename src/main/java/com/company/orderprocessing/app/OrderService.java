@@ -5,6 +5,7 @@ import com.company.orderprocessing.event.IncomingOrderEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jmix.appsettings.AppSettings;
 import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
@@ -26,9 +27,12 @@ public class OrderService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
 
-    private final String START_MESSAGE_NAME = "Start order processing";
-    private final SystemAuthenticator systemAuthenticator;
+    private final static String START_MESSAGE_NAME = "Start order processing";
+    private final Random random = new Random();
+    private final OrderProcessingSettings settings;
 
+    @Autowired
+    private SystemAuthenticator systemAuthenticator;
     @Autowired
     private UnconstrainedDataManager unconstrainedDataManager;
     @Autowired
@@ -40,8 +44,8 @@ public class OrderService {
     @Autowired
     private UiEventPublisher uiEventPublisher;
 
-    public OrderService(SystemAuthenticator systemAuthenticator) {
-        this.systemAuthenticator = systemAuthenticator;
+    public OrderService(AppSettings appSettings) {
+        settings = appSettings.load(OrderProcessingSettings.class);
     }
 
     public void startOrderProcess(String json) {
@@ -56,7 +60,7 @@ public class OrderService {
         map.put("address", orderRecord.address());
         map.put("quantity", orderRecord.quantity());
         map.put("item", item);
-        systemAuthenticator.begin();
+        systemAuthenticator.begin("admin");
         try {
             ProcessInstance instance = runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME,
                     businessKey,
@@ -65,6 +69,7 @@ public class OrderService {
             log.info("Order process started");
             uiEventPublisher.publishEvent(new IncomingOrderEvent(this, json));
         } catch (Exception e) {
+            //noinspection JmixRuntimeException
             throw new RuntimeException(e);
         } finally {
             systemAuthenticator.end();
@@ -73,7 +78,8 @@ public class OrderService {
 
     private String generateBusinessKey() {
         Integer number = numeratorService.getNext("order");
-        return "ORD-" + number.toString();
+        String formattedNumber = String.format("%05d", number);
+        return "ORD-" + formattedNumber;
     }
 
     public OrderRecord deserialize(String json) {
@@ -112,19 +118,18 @@ public class OrderService {
     }
 
     private void randomDelay() {
-        Random random = new Random();
         long i = random.nextLong(5L, 20L);
         try {
             Thread.sleep(i * 1000L);
         } catch (InterruptedException e) {
+            //noinspection JmixRuntimeException
             throw new RuntimeException(e);
         }
     }
 
     private boolean randomError() {
-        Random random = new Random();
         int i = random.nextInt(100);
-        return i > 70;
+        return i > settings.getPaymentErrorProbability();
     }
 
     public Order createOrder(String customer,
@@ -138,10 +143,10 @@ public class OrderService {
         order.setAddress(address);
         order.setItem(item);
         order.setQuantity(quantity);
-        order.setStatus(OrderStatus.NEW);
         order.setProcessInstanceId(execution.getProcessInstanceId());
         order.setNumber(orderNumber);
         unconstrainedDataManager.save(order);
+        setOrderStatus(order, 15);
         MDC.put("Order #", order.getNumber());
         log.info("Order created: {}", order.getNumber());
         return order;
@@ -155,6 +160,7 @@ public class OrderService {
             case 40 -> OrderStatus.IN_DELIVERY;
             case 50 -> OrderStatus.COMPLETED;
             case 60 -> OrderStatus.CANCELLED;
+            case 15 -> OrderStatus.SECRET;
             default -> null;
         };
         order.setStatus(status);
@@ -176,11 +182,15 @@ public class OrderService {
         MDC.put("Order #", order.getNumber());
         UUID id = order.getItem().getId();
         Item item = findItemByName(order.getItem().getName());
-        Integer reserve = order.getQuantity() * direction;
+        int reserve = order.getQuantity() * direction;
 
         int availableQty = item.getTotalQuantity() - item.getReserved();
         if (availableQty >= reserve) {
-            item.setReserved(item.getReserved() + reserve);
+            int oldValue = item.getReserved();
+            int oldTotal = item.getTotalQuantity();
+            item.setReserved(oldValue + reserve);
+            item.setTotalQuantity(oldTotal - reserve);
+            unconstrainedDataManager.save(item);
             log.info("{} success: {}: {}", message, item.getName(), reserve);
             return true;
         } else {

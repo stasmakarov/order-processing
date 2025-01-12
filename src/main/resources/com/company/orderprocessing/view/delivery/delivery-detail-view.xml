@@ -51,7 +51,7 @@
                 <action id="remove" type="list_remove"/>
             </actions>
             <columns>
-                <column property="orderNumber"/>
+                <column property="number"/>
                 <column property="customer"/>
                 <column property="address"/>
                 <column property="quantity"/>

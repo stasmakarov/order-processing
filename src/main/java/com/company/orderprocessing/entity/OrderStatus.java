@@ -12,7 +12,8 @@ public enum OrderStatus implements EnumClass<Integer> {
     READY(30),
     IN_DELIVERY(40),
     COMPLETED(50),
-    CANCELLED(60);
+    CANCELLED(60),
+    SECRET(15);
 
     private final Integer id;
 

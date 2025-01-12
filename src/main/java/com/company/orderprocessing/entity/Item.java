@@ -25,10 +25,21 @@ public class Item {
     private String description;
 
     @Column(name = "TOTAL_QUANTITY")
-    private Integer totalQuantity;
+    private Integer totalQuantity = 0;
 
     @Column(name = "RESERVED")
-    private Integer reserved;
+    private Integer reserved = 0;
+
+    @Column(name = "DELIVERED")
+    private Integer delivered = 0;
+
+    public Integer getDelivered() {
+        return delivered;
+    }
+
+    public void setDelivered(Integer delivered) {
+        this.delivered = delivered;
+    }
 
     public Integer getReserved() {
         return reserved;

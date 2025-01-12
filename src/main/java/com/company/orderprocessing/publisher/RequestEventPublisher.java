@@ -1,5 +1,6 @@
 package com.company.orderprocessing.publisher;
 
+import com.company.orderprocessing.entity.Order;
 import com.company.orderprocessing.event.RequestSendEvent;
 import com.company.orderprocessing.event.ResponseFailEvent;
 import com.company.orderprocessing.event.ResponseOkEvent;
@@ -20,18 +21,9 @@ public class RequestEventPublisher {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
-    public void sendAddressVerificationRequest(String address, String processInstanceId) {
+    public void sendAddressVerificationRequest(Order order, String processInstanceId) {
         log.info("Event published: initiateAddressVerificationRequest");
-        applicationEventPublisher.publishEvent(new RequestSendEvent(this, address, processInstanceId));
+        applicationEventPublisher.publishEvent(new RequestSendEvent(this, order, processInstanceId));
     }
 
-    public void notifyAddressVerificationCompletedSuccess(String address, String token) {
-        log.info("Event published: notifyAddressVerificationCompleted");
-        applicationEventPublisher.publishEvent(new ResponseOkEvent(this, address, token));
-    }
-
-    public void notifyAddressVerificationCompletedFailure(String address, String token) {
-        log.info("Event published: notifyAddressVerificationCompleted");
-        applicationEventPublisher.publishEvent(new ResponseFailEvent(this, address, token));
-    }
 }
