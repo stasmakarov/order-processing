@@ -14,6 +14,7 @@
                 <property name="location"/>
                 <property name="processInstanceId"/>
                 <property name="number"/>
+                <property name="region" fetchPlan="_base"/>
             </fetchPlan>
             <loader id="orderDl"/>
         </instance>
@@ -45,6 +46,12 @@
             <textField id="locationField" property="location"/>
             <textField id="processInstanceIdField" property="processInstanceId"/>
             <textField id="codeField" property="number"/>
+            <entityPicker id="regionField" property="region">
+                <actions>
+                    <action id="entityLookup" type="entity_lookup"/>
+                    <action id="entityClear" type="entity_clear"/>
+                </actions>
+            </entityPicker>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveAction"/>

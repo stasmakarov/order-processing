@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
       title="msg://numeratorListView.title"
       focusComponent="numeratorsDataGrid">
     <data>
@@ -25,10 +24,6 @@
             <pagination component="pagination"/>
         </urlQueryParameters>
     </facets>
-    <actions>
-        <action id="selectAction" type="lookup_select"/>
-        <action id="discardAction" type="lookup_discard"/>
-    </actions>
     <layout padding="false">
         <formLayout id="layoutWrapper" classNames="master-detail-layout" height="100%">
             <vbox id="listLayout" height="100%">
@@ -51,10 +46,6 @@
                         <column property="number"/>
                     </columns>
                 </dataGrid>
-                <hbox id="lookupActions" visible="false">
-                    <button id="selectButton" action="selectAction"/>
-                    <button id="discardButton" action="discardAction"/>
-                </hbox>
             </vbox>
             <vbox id="detailsLayout" height="100%">
                 <formLayout id="form" dataContainer="numeratorDc">

@@ -1,8 +1,8 @@
 package com.company.orderprocessing.view.processinstancelist;
 
+import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.event.RefreshViewEvent;
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.Route;
 import io.jmix.bpm.entity.ProcessInstanceData;
 import io.jmix.bpmflowui.view.processinstance.ProcessInstanceListView;
@@ -18,6 +18,7 @@ import org.flowable.engine.ManagementService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.flowable.eventsubscription.api.EventSubscription;
 import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.job.api.Job;
 import org.slf4j.Logger;
@@ -26,8 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 @Route(value = "bpm/processinstances", layout = DefaultMainViewParent.class)
 @ViewController(id = "bpm_ProcessInstance.list")
@@ -42,6 +41,8 @@ public class OrdProcessInstanceListView extends ProcessInstanceListView {
     private ManagementService managementService;
     @Autowired
     private HistoryService historyService;
+    @Autowired
+    private ResetService resetService;
     @Autowired
     private Dialogs dialogs;
 
@@ -58,15 +59,50 @@ public class OrdProcessInstanceListView extends ProcessInstanceListView {
     }
 
     private void suspendActiveProcesses() {
-        List<ProcessInstance> instances = runtimeService.createProcessInstanceQuery().list();
+        List<ProcessInstance> instances = runtimeService.createProcessInstanceQuery().active().list();
+        int activeCount = instances.size();
+        log.info("Active processes: {}", activeCount);
         for (ProcessInstance pi : instances) {
             String id = pi.getId();
-            try {
-                runtimeService.suspendProcessInstanceById(id);
-                log.info("Process instance suspended: {}", id);
-            } catch (Exception e) {
-                log.error("Failed to suspend process instance with ID {}: {}", id, e.getMessage());
+            deleteJobs(id);
+            runtimeService.suspendProcessInstanceById(id);
+        }
+    }
+
+    private void deleteJobs(String id) {
+        try {
+            List<Job> jobs = managementService.createJobQuery().processInstanceId(id).list();
+            for (Job job : jobs) {
+                try {
+                    managementService.deleteJob(job.getId());
+                } catch (Exception e) {
+                    log.error("Can't delete job: {}", job.getId());
+                }
             }
+            log.info("Process instance suspended: {}", id);
+        } catch (Exception e) {
+            log.error("Failed to suspend process instance with ID {}: {}", id, e.getMessage());
+        }
+    }
+
+    private void deleteSubscriptions(String id) {
+        try {
+            List<EventSubscription> subscriptions = runtimeService.createEventSubscriptionQuery()
+                    .processInstanceId(id).list();
+
+            for (EventSubscription subscription : subscriptions) {
+                String processInstanceId = subscription.getProcessInstanceId();
+                String processDefinitionId = subscription.getProcessDefinitionId();
+                String eventType = subscription.getEventType();
+                String eventName = subscription.getEventName();
+                runtimeService.createProcessInstanceStartEventSubscriptionDeletionBuilder()
+                        .processDefinitionId(processDefinitionId)
+                        .addCorrelationParameterValue("eventType", eventType)
+                        .addCorrelationParameterValue("eventName", eventName)
+                        .deleteSubscriptions();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -128,6 +164,12 @@ public class OrdProcessInstanceListView extends ProcessInstanceListView {
 
     @EventListener
     public void onProcessStarted(final RefreshViewEvent event) {
+        applyFilter();
+    }
+
+    @Subscribe(id = "cleanDbBtn", subject = "clickListener")
+    public void onCleanDbBtnClick(final ClickEvent<JmixButton> event) {
+        resetService.deleteAllProcessInstances();
         applyFilter();
     }
 

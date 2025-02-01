@@ -1,5 +1,5 @@
 plugins {
-    id 'io.jmix' version '2.4.1'
+    id 'io.jmix' version '2.4.3'
     id 'java'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.9'
 }
@@ -8,7 +8,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'com.vaadin'
 
 jmix {
-    bomVersion = '2.4.1'
+    bomVersion = '2.4.3'
     projectId = 'ord'
 }
 
@@ -54,8 +54,6 @@ dependencies {
     implementation 'io.jmix.maps:jmix-maps-flowui-starter'
     implementation 'io.jmix.maps:jmix-maps-starter'
     implementation 'io.jmix.charts:jmix-charts-flowui-starter'
-    implementation 'io.jmix.notifications:jmix-notifications-flowui-starter'
-    implementation 'io.jmix.notifications:jmix-notifications-starter'
     implementation 'io.jmix.authserver:jmix-authserver-starter'
     implementation 'io.jmix.rest:jmix-rest-starter'
 

@@ -43,9 +43,9 @@
     <sequenceFlow id="Flow_1i0dgdd" sourceRef="Gateway_0dmoin6" targetRef="Event_Fake" />
     <sequenceFlow id="Flow_1sfvqy4" sourceRef="Event_Fake" targetRef="Activity_08f6y02" />
     <endEvent id="Event_0ja16pi">
-      <incoming>Flow_0b2ry92</incoming>
+      <incoming>Flow_0oypf24</incoming>
     </endEvent>
-    <sequenceFlow id="Flow_0oypf24" sourceRef="Event_OK" targetRef="Activity_01m1qg0" />
+    <sequenceFlow id="Flow_0oypf24" sourceRef="Event_OK" targetRef="Event_0ja16pi" />
     <sequenceFlow id="Flow_02p1irt" sourceRef="Event_1eif3b8" targetRef="Activity_0osmd8v" />
     <serviceTask id="Activity_1m3q7ji" name="Send request to Nominatim" flowable:expression="${ord_AddressVerificator.verify(order,execution)}" jmix:taskType="springBean" jmix:beanName="ord_AddressVerificator">
       <extensionElements>
@@ -117,17 +117,6 @@ println "Counter: ${counter + 1}"
       <incoming>Flow_1sfvqy4</incoming>
       <outgoing>Flow_1riez5w</outgoing>
     </serviceTask>
-    <sequenceFlow id="Flow_0b2ry92" sourceRef="Activity_01m1qg0" targetRef="Event_0ja16pi" />
-    <serviceTask id="Activity_01m1qg0" name="Set status &#34;Verified&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,20)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
-      <extensionElements>
-        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
-          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
-          <jmix:methodParam name="statusId" type="int" isVariable="false">20</jmix:methodParam>
-        </jmix:springBean>
-      </extensionElements>
-      <incoming>Flow_0oypf24</incoming>
-      <outgoing>Flow_0b2ry92</outgoing>
-    </serviceTask>
   </process>
   <message id="fake-address" name="Fake address" />
   <error id="fake-address-error" name="Fake address error" errorCode="400" />
@@ -191,9 +180,6 @@ println "Counter: ${counter + 1}"
         <omgdc:Bounds x="780" y="240" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0tggwb8_di" bpmnElement="Activity_01m1qg0">
-        <omgdc:Bounds x="780" y="128" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_18lp63d_di" bpmnElement="Flow_18lp63d">
         <omgdi:waypoint x="48" y="168" />
         <omgdi:waypoint x="100" y="168" />
@@ -226,7 +212,7 @@ println "Counter: ${counter + 1}"
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0oypf24_di" bpmnElement="Flow_0oypf24">
         <omgdi:waypoint x="738" y="168" />
-        <omgdi:waypoint x="780" y="168" />
+        <omgdi:waypoint x="912" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_02p1irt_di" bpmnElement="Flow_02p1irt">
         <omgdi:waypoint x="720" y="52" />
@@ -261,10 +247,6 @@ println "Counter: ${counter + 1}"
       <bpmndi:BPMNEdge id="Flow_1riez5w_di" bpmnElement="Flow_1riez5w">
         <omgdi:waypoint x="880" y="280" />
         <omgdi:waypoint x="912" y="280" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0b2ry92_di" bpmnElement="Flow_0b2ry92">
-        <omgdi:waypoint x="880" y="168" />
-        <omgdi:waypoint x="912" y="168" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

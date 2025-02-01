@@ -24,7 +24,6 @@ import java.util.List;
 @Route(value = "deliveries", layout = MainView.class)
 @ViewController(id = "ord_Delivery.list")
 @ViewDescriptor(path = "delivery-list-view.xml")
-@LookupComponent("deliveriesDataGrid")
 @DialogMode(width = "64em")
 public class DeliveryListView extends StandardListView<Delivery> {
 
@@ -127,10 +126,10 @@ public class DeliveryListView extends StandardListView<Delivery> {
 
     @Subscribe(id = "removeAllButton", subject = "clickListener")
     public void onRemoveAllButtonClick(final ClickEvent<JmixButton> event) {
-        deliveryRepository.deleteAll();
-        deliveryDl.load();
         deliveriesDc.setItems(null);
         deliveryDc.setItem(null);
+        deliveryRepository.deleteAll();
+        deliveryDl.load();
         updateControls(false);
     }
 
@@ -138,4 +137,5 @@ public class DeliveryListView extends StandardListView<Delivery> {
         List<Order> orders = orderRepository.findByDelivery(delivery);
         ordersDc.setItems(orders);
     }
+
 }

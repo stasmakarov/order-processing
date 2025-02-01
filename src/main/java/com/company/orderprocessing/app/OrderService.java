@@ -3,6 +3,7 @@ package com.company.orderprocessing.app;
 import com.company.orderprocessing.entity.*;
 import com.company.orderprocessing.event.IncomingOrderEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
+import com.company.orderprocessing.util.Iso8601Converter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.appsettings.AppSettings;
@@ -12,7 +13,6 @@ import io.jmix.flowui.UiEventPublisher;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
-import org.flowable.engine.runtime.ProcessInstance;
 import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,6 @@ public class OrderService {
 
     private final static String START_MESSAGE_NAME = "Start order processing";
     private final Random random = new Random();
-    private final OrderProcessingSettings settings;
 
     @Autowired
     private SystemAuthenticator systemAuthenticator;
@@ -43,29 +42,37 @@ public class OrderService {
     private GeoCodingService geoCodingService;
     @Autowired
     private UiEventPublisher uiEventPublisher;
+    @Autowired
+    private AppSettings appSettings;
 
-    public OrderService(AppSettings appSettings) {
-        settings = appSettings.load(OrderProcessingSettings.class);
-    }
 
     public void startOrderProcess(String json) {
         OrderRecord orderRecord = deserialize(json);
         if (orderRecord == null) return;
 
+        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
+        int timerNew = random.nextInt(1, maxDelayTimer);
+        int timerVerified = random.nextInt(1, maxDelayTimer);
+        String timerNewDuration = Iso8601Converter.convertSecondsToDuration(timerNew);
+        String timerVerifiedDuration = Iso8601Converter.convertSecondsToDuration(timerVerified);
+
         String businessKey = generateBusinessKey();
         Item item = findItemByName(orderRecord.item());
+
         Map<String, Object> map = new HashMap<>();
         map.put("orderNumber", businessKey);
         map.put("customer", orderRecord.customer());
         map.put("address", orderRecord.address());
         map.put("quantity", orderRecord.quantity());
         map.put("item", item);
+        map.put("timerNew", timerNewDuration);
+        map.put("timerVerified", timerVerifiedDuration);
+
         systemAuthenticator.begin("admin");
         try {
-            ProcessInstance instance = runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME,
+            runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME,
                     businessKey,
                     map);
-            MDC.put("Process BK", instance.getBusinessKey());
             log.info("Order process started");
             uiEventPublisher.publishEvent(new IncomingOrderEvent(this, json));
         } catch (Exception e) {
@@ -102,7 +109,6 @@ public class OrderService {
 
     public boolean simulatePayment(Order order) {
         MDC.put("Order #", order.getNumber());
-        randomDelay();
         if (randomError()) {
             log.error("Payment failed");
             return false;
@@ -117,19 +123,11 @@ public class OrderService {
         return true;
     }
 
-    private void randomDelay() {
-        long i = random.nextLong(5L, 20L);
-        try {
-            Thread.sleep(i * 1000L);
-        } catch (InterruptedException e) {
-            //noinspection JmixRuntimeException
-            throw new RuntimeException(e);
-        }
-    }
 
     private boolean randomError() {
-        int i = random.nextInt(100);
-        return i > settings.getPaymentErrorProbability();
+        int randomValue = random.nextInt(1,100);
+        Integer errorProbability = appSettings.load(OrderProcessingSettings.class).getPaymentErrorProbability();
+        return randomValue < errorProbability;
     }
 
     public Order createOrder(String customer,
@@ -145,8 +143,8 @@ public class OrderService {
         order.setQuantity(quantity);
         order.setProcessInstanceId(execution.getProcessInstanceId());
         order.setNumber(orderNumber);
+        order.setStatus(OrderStatus.NEW);
         unconstrainedDataManager.save(order);
-        setOrderStatus(order, 15);
         MDC.put("Order #", order.getNumber());
         log.info("Order created: {}", order.getNumber());
         return order;
@@ -160,55 +158,54 @@ public class OrderService {
             case 40 -> OrderStatus.IN_DELIVERY;
             case 50 -> OrderStatus.COMPLETED;
             case 60 -> OrderStatus.CANCELLED;
-            case 15 -> OrderStatus.SECRET;
             default -> null;
         };
         order.setStatus(status);
         unconstrainedDataManager.save(order);
-        MDC.put("Order #", order.getNumber());
         log.info("Order #: {}, Status set: {}", order.getNumber(), status);
     }
 
-    private boolean reservationGeneral(Order order, ReservationSign sign) {
-        int direction;
-        String message;
-        if (ReservationSign.PLUS.equals(sign)) {
-            direction = 1;
-            message = "Reservation";
-        } else {
-            direction = -1;
-            message = "Reservation canceling";
-        }
-        MDC.put("Order #", order.getNumber());
-        UUID id = order.getItem().getId();
-        Item item = findItemByName(order.getItem().getName());
-        int reserve = order.getQuantity() * direction;
 
-        int availableQty = item.getTotalQuantity() - item.getReserved();
-        if (availableQty >= reserve) {
-            int oldValue = item.getReserved();
-            int oldTotal = item.getTotalQuantity();
-            item.setReserved(oldValue + reserve);
-            item.setTotalQuantity(oldTotal - reserve);
+    public boolean doReservation(Order order) {
+        Item item = findItemByName(order.getItem().getName());
+        int availableQty = item.getAvailable();
+        int qtyToReserve = order.getQuantity();
+
+        if (availableQty >= qtyToReserve) { //reservation is possible
+            int reservedQty = item.getReserved();
+            item.setReserved(reservedQty + qtyToReserve);
+            item.setAvailable(availableQty - qtyToReserve);
             unconstrainedDataManager.save(item);
-            log.info("{} success: {}: {}", message, item.getName(), reserve);
+            log.info("Reservation: {}, qty: {}", item.getName(), qtyToReserve);
             return true;
         } else {
-            log.info("{} failed: {}: {}", message, item.getName(), reserve);
+            log.info("Reservation failed: {}, qty: {}", item.getName(), qtyToReserve);
             return false;
         }
     }
 
-    public boolean doReservation(Order order) {
-        MDC.put("Order #", order.getNumber());
-        log.info("Doing reservation");
-        return reservationGeneral(order, ReservationSign.PLUS);
+    public void cancelReservation(Order order) {
+        Item item = findItemByName(order.getItem().getName());
+        int availableQty = item.getAvailable();
+        int qtyToCancelReserve = order.getQuantity();
+
+        int reservedQty = item.getReserved();
+        item.setReserved(reservedQty - qtyToCancelReserve);
+        item.setAvailable(availableQty + qtyToCancelReserve);
+        unconstrainedDataManager.save(item);
+        log.info("Canceling reservation: {}, qty: {}", item.getName(), qtyToCancelReserve);
     }
 
-    public boolean cancelReservation(Order order) {
-        MDC.put("Order #", order.getNumber());
-        log.info("Cancelling reservation");
-        return reservationGeneral(order, ReservationSign.MINUS);
+    public void confirmDelivery(Order order) {
+//        Item item = findItemByName(order.getItem().getName());
+//
+//        int deliveredQty = item.getDelivered();
+//        int reservedQty = item.getReserved();
+//        int itemsInOrder = order.getQuantity();
+//
+//        item.setDelivered(deliveredQty + itemsInOrder);
+//        item.setReserved(reservedQty - itemsInOrder);
+//        unconstrainedDataManager.save(item);
     }
 
     public void addressVerification(Order order) {
@@ -224,4 +221,5 @@ public class OrderService {
             throw new BpmnError("100");
         }
     }
+
 }

@@ -25,6 +25,7 @@
         <hbox id="buttonsPanel" classNames="buttons-panel" alignItems="BASELINE">
             <button id="editBtn" action="processInstancesGrid.edit"/>
             <button id="deleteAllBtn" text="Delete all"/>
+            <button id="cleanDbBtn" text="Clean database"/>
         </hbox>
         <dataGrid id="processInstancesGrid"
                   dataContainer="processInstancesDc"

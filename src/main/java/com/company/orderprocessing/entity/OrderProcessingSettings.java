@@ -18,6 +18,10 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @Column(name = "UUID")
     private UUID uuid;
 
+    @AppSettingsDefault("orders")
+    @Column(name = "QUEUE_NAME")
+    private String queueName;
+
     @AppSettingsDefault("3")
     @Column(name = "DELIVERY_PACKAGE")
     private Integer deliveryPackage;
@@ -29,6 +33,50 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @AppSettingsDefault("500")
     @Column(name = "INITIAL_ITEM_QUANTITY")
     private Integer initialItemQuantity;
+
+    @AppSettingsDefault("60")
+    @Column(name = "MAX_DELAY_TIMER")
+    private Integer maxDelayTimer;
+
+    @AppSettingsDefault("10")
+    @Column(name = "MAX_ITEMS_PARTY")
+    private Integer maxItemsParty;
+
+    @AppSettingsDefault("300")
+    @Column(name = "MANUFACTURING_CYCLE")
+    private Integer manufacturingCycle;
+
+    public String getQueueName() {
+        return queueName;
+    }
+
+    public void setQueueName(String queueName) {
+        this.queueName = queueName;
+    }
+
+    public Integer getMaxDelayTimer() {
+        return maxDelayTimer;
+    }
+
+    public void setMaxDelayTimer(Integer maxDelayTimer) {
+        this.maxDelayTimer = maxDelayTimer;
+    }
+
+    public void setManufacturingCycle(Integer manufacturingCycle) {
+        this.manufacturingCycle = manufacturingCycle;
+    }
+
+    public Integer getManufacturingCycle() {
+        return manufacturingCycle;
+    }
+
+    public Integer getMaxItemsParty() {
+        return maxItemsParty;
+    }
+
+    public void setMaxItemsParty(Integer maxItemsParty) {
+        this.maxItemsParty = maxItemsParty;
+    }
 
     public Integer getInitialItemQuantity() {
         return initialItemQuantity;

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
       title="msg://itemListView.title"
       focusComponent="itemsDataGrid">
     <data>
@@ -9,7 +8,7 @@
             <fetchPlan extends="_base"/>
             <loader id="itemsDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from ord_Item e]]>
+                    <![CDATA[select e from ord_Item e order by e.name]]>
                 </query>
             </loader>
         </collection>
@@ -25,10 +24,6 @@
             <pagination component="pagination"/>
         </urlQueryParameters>
     </facets>
-    <actions>
-        <action id="selectAction" type="lookup_select"/>
-        <action id="discardAction" type="lookup_discard"/>
-    </actions>
     <layout padding="false">
         <formLayout id="layoutWrapper" classNames="master-detail-layout" height="100%">
             <vbox id="listLayout" height="100%">
@@ -51,15 +46,11 @@
                     </actions>
                     <columns resizable="true">
                         <column property="name"/>
-                        <column property="totalQuantity"/>
+                        <column property="available"/>
                         <column property="reserved"/>
                         <column property="delivered"/>
                     </columns>
                 </dataGrid>
-                <hbox id="lookupActions" visible="false">
-                    <button id="selectButton" action="selectAction"/>
-                    <button id="discardButton" action="discardAction"/>
-                </hbox>
             </vbox>
             <vbox id="detailsLayout" height="100%">
                 <formLayout id="form" dataContainer="itemDc">
@@ -69,7 +60,7 @@
                     </responsiveSteps>
                     <textField id="nameField" property="name"/>
                     <textArea id="descriptionField" height="9.5em" property="description"/>
-                    <textField id="totalQuantityField" property="totalQuantity"/>
+                    <textField id="totalQuantityField" property="available"/>
                     <textField id="reservedField" property="reserved"/>
                     <textField id="deliveredField" property="delivered"/>
                 </formLayout>

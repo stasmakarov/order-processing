@@ -18,10 +18,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.time.LocalDateTime.now;
@@ -89,66 +87,64 @@ public class DeliveryService {
         }
     }
 
+    /**
+     * Performs delivery for the given delivery number.
+     *
+     * @param deliveryNumber the number of the delivery to perform
+     */
     public void performDelivery(String deliveryNumber) {
-        randomDelay();
         systemAuthenticator.begin("admin");
-        try {
-            SaveContext saveContext = new SaveContext();
-            Delivery delivery = deliveryRepository.findByNumber(deliveryNumber);
+        SaveContext saveContext = new SaveContext();
+        Delivery delivery = getDelivery(deliveryNumber);
+        if (delivery == null) return;
 
-            if (delivery == null) {
-                log.error("Delivery not found for number: {}", deliveryNumber);
-                return;
-            }
+        List<Order> orders = delivery.getOrders();
 
-            List<Order> orders = delivery.getOrders();
+        // Collect item IDs from orders
+        List<UUID> itemIds = orders.stream()
+                .map(order -> order.getItem().getId())
+                .collect(Collectors.toList());
+        // Load only relevant items
+        List<Item> items = dataManager.load(Item.class)
+                .query("select i from ord_Item i where i.id in :itemIds")
+                .parameter("itemIds", itemIds)
+                .list();
 
-            // Collect item IDs from orders
-            List<UUID> itemIds = orders.stream()
-                    .map(order -> order.getItem().getId())
-                    .collect(Collectors.toList());
+        Map<UUID, Item> itemMap = items.stream()
+                .collect(Collectors.toMap(Item::getId, Function.identity()));
 
-            // Load only relevant items
-            List<Item> items = dataManager.load(Item.class)
-                    .query("select i from Item i where i.id in :itemIds")
-                    .parameter("itemIds", itemIds)
-                    .list();
-
-            for (Order order : orders) {
-                UUID itemId = order.getItem().getId();
-                Optional<Item> orderedItem = items.stream()
-                        .filter(item -> itemId.equals(item.getId()))
-                        .findFirst();
-
-                orderedItem.ifPresent(item -> {
-                    Integer quantity = order.getQuantity();
-                    item.setDelivered(item.getDelivered() + quantity);
-                    item.setReserved(item.getReserved() - quantity);
-                    saveContext.saving(item);
-                });
+        for (Order order : orders) {
+            UUID itemId = order.getItem().getId();
+            Item orderedItem = itemMap.get(itemId);
+            if (orderedItem != null) {
+                Integer quantity = order.getQuantity();
+                orderedItem.setDelivered(orderedItem.getDelivered() + quantity);
+                orderedItem.setReserved(orderedItem.getReserved() - quantity);
+                saveContext.saving(orderedItem);
             }
 
             dataManager.save(saveContext);
             uiEventPublisher.publishEvent(new DeliveryCompletedEvent(this, deliveryNumber));
-        } catch (Exception e) {
-            log.error("An error occurred while performing delivery {}: {}", deliveryNumber, e.getMessage());
+            log.info("Delivery completed: {}", deliveryNumber);
+        }
+    }
+
+    private Delivery getDelivery(String deliveryNumber) {
+        Delivery delivery = null;
+        systemAuthenticator.begin("admin");
+        try {
+            delivery = dataManager.load(Delivery.class)
+                    .query("select e from ord_Delivery e where e.number = :number")
+                    .parameter("number", deliveryNumber)
+                    .one();
+        } catch (Exception ignored) {
+            log.error("Delivery not found for number: {}", deliveryNumber);
         } finally {
             systemAuthenticator.end();
         }
-
-        log.info("Delivery completed: {}", deliveryNumber);
+        return delivery;
     }
 
-
-    private void randomDelay() {
-        long i = random.nextLong(3L, 12L);
-        try {
-            Thread.sleep(i * 1000L);
-        } catch (InterruptedException e) {
-            //noinspection JmixRuntimeException
-            throw new RuntimeException(e);
-        }
-    }
 
     public void sendMessage(Order order) {
         String processInstanceId = order.getProcessInstanceId();

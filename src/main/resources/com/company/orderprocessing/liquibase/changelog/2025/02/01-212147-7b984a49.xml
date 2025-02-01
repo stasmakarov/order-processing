@@ -6,11 +6,8 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
         objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
     <changeSet id="1" author="ord">
-        <createTable tableName="ORD_ORDER_PROCESSING_SETTINGS">
-            <column name="ID" type="UUID">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_ORD_ORDER_PROCESSING_SETTINGS"/>
-            </column>
-            <column name="DELIVERY_PACKAGE" type="INT"/>
-        </createTable>
+        <addColumn tableName="ORD_ORDER_PROCESSING_SETTING">
+            <column name="QUEUE_NAME" type="VARCHAR(255)"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

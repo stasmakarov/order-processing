@@ -37,11 +37,11 @@
                 <hbox id="buttonsPanel" classNames="buttons-panel">
                     <vbox>
                         <hbox>
-                            <button id="createButton" action="ordersDataGrid.create"/>
                             <button id="editButton" action="ordersDataGrid.edit"/>
                             <button id="refreshButton" action="ordersDataGrid.refresh"/>
                             <button id="removeButton" action="ordersDataGrid.remove" visible="false"/>
                             <button id="removeAllButton" text="msg://remove.all"/>
+                            <button id="refreshMapBtn" text="Refresh map"/>
                         </hbox>
                         <hbox>
                             <simplePagination id="pagination" visible="false"
@@ -61,7 +61,6 @@
                           columnReorderingAllowed="true"
                           selectionMode="SINGLE">
                     <actions>
-                        <action id="create" type="list_create"/>
                         <action id="edit" type="list_edit"/>
                         <action id="refresh" type="list_refresh"/>
                         <action id="remove" type="list_remove"/>
@@ -84,9 +83,11 @@
                             <maps:osmSource/>
                         </maps:tile>
                         <maps:vector id="ordersLayer">
-                            <maps:dataVectorSource id="dataVectorSource1"
-                                                   dataContainer="ordersDc"
-                                                   property="location"/>
+                            <maps:cluster id="cluster">
+                                <maps:dataVectorSource id="dataVectorSource1"
+                                                       dataContainer="ordersDc"
+                                                       property="location"/>
+                            </maps:cluster>
                         </maps:vector>
                     </maps:layers>
                     <!-- Define the boundaries for Moscow -->

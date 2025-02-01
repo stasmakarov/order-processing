@@ -10,6 +10,6 @@
         <item view="ord_Delivery.list" title="msg://com.company.orderprocessing.view.delivery/deliveryListView.title"/>
         <item view="ord_Numerator.list" title="msg://com.company.orderprocessing.view.numerator/numeratorListView.title"/>
         <item view="ord_User.list" title="msg://com.company.orderprocessing.view.user/UserListView.title"/>
-        <item view="ord_TestView" title="msg://com.company.orderprocessing.view.test/testView.title"/>
+        <!--        <item view="ord_TestView" title="msg://com.company.orderprocessing.view.test/testView.title"/>-->
     </menu>
 </menu-config>

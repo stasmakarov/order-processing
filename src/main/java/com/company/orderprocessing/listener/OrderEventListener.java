@@ -4,8 +4,11 @@ import com.company.orderprocessing.entity.Order;
 import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.entity.OrderStatus;
 import com.company.orderprocessing.event.RefreshViewEvent;
+import com.company.orderprocessing.util.Iso8601Converter;
 import io.jmix.appsettings.AppSettings;
 import io.jmix.core.DataManager;
+import io.jmix.core.Id;
+import io.jmix.core.event.AttributeChanges;
 import io.jmix.core.event.EntityChangedEvent;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
@@ -17,12 +20,17 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 @Component("ord_OrderEventListener")
 public class OrderEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(OrderEventListener.class);
 
     private static final String MESSAGE_NAME = "Start delivery";
+    private final Random random = new Random();
 
     private final DataManager dataManager;
     private final SystemAuthenticator systemAuthenticator;
@@ -67,6 +75,8 @@ public class OrderEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener
     public void onOrderChangedAfterCommit(final EntityChangedEvent<Order> event) {
+        Id<Order> entityId = event.getEntityId();
+        AttributeChanges changes = event.getChanges();
         if (!event.getChanges().isChanged("status")
                 || event.getType() == EntityChangedEvent.Type.DELETED) return;
 
@@ -78,15 +88,24 @@ public class OrderEventListener {
                     .parameter("status", OrderStatus.READY)
                     .one();
 
+            Order order = dataManager.load(entityId).one();
             if (count > settings.getDeliveryPackage()) {
                 log.info("Number of orders with status READY:{}. The delivery process will be started.", count);
-                runtimeService.startProcessInstanceByMessage(MESSAGE_NAME);
+                startDeliveryProcess(settings);
             }
-            uiEventPublisher.publishEvent(new RefreshViewEvent(this));
+            uiEventPublisher.publishEvent(new RefreshViewEvent(this, order.getNumber()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             systemAuthenticator.end();
         }
+    }
+
+    private void startDeliveryProcess(OrderProcessingSettings settings) {
+        Integer maxDelayTimer = settings.getMaxDelayTimer();
+        int randomValue = random.nextInt(1, maxDelayTimer);
+        Map<String, Object> params = new HashMap<>();
+        params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
+        runtimeService.startProcessInstanceByMessage(MESSAGE_NAME, params);
     }
 }

@@ -1,5 +1,6 @@
 package com.company.orderprocessing.entity;
 
+import com.github.javaparser.quality.NotNull;
 import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
@@ -12,8 +13,7 @@ public enum OrderStatus implements EnumClass<Integer> {
     READY(30),
     IN_DELIVERY(40),
     COMPLETED(50),
-    CANCELLED(60),
-    SECRET(15);
+    CANCELLED(60);
 
     private final Integer id;
 
@@ -25,7 +25,6 @@ public enum OrderStatus implements EnumClass<Integer> {
         return id;
     }
 
-    @Nullable
     public static OrderStatus fromId(Integer id) {
         for (OrderStatus at : OrderStatus.values()) {
             if (at.getId().equals(id)) {

@@ -1,5 +1,6 @@
 package com.company.orderprocessing.view.numerator;
 
+import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.entity.Numerator;
 import com.company.orderprocessing.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
@@ -9,7 +10,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.DataManager;
-import io.jmix.core.SaveContext;
 import io.jmix.core.validation.group.UiCrossFieldChecks;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.validation.ValidationErrors;
@@ -19,17 +19,16 @@ import io.jmix.flowui.model.*;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
 @Route(value = "numerators", layout = MainView.class)
 @ViewController(id = "ord_Numerator.list")
 @ViewDescriptor(path = "numerator-list-view.xml")
-@LookupComponent("numeratorsDataGrid")
 @DialogMode(width = "64em")
 public class NumeratorListView extends StandardListView<Numerator> {
 
     @Autowired
     private DataManager dataManager;
+    @Autowired
+    private ResetService resetService;
 
     @ViewComponent
     private DataContext dataContext;
@@ -130,13 +129,8 @@ public class NumeratorListView extends StandardListView<Numerator> {
 
     @Subscribe(id = "resetAllBtn", subject = "clickListener")
     public void onResetAllBtnClick(final ClickEvent<JmixButton> event) {
-        SaveContext saveContext = new SaveContext();
-        List<Numerator> numerators = dataManager.load(Numerator.class).all().list();
-        for (Numerator numerator : numerators) {
-            numerator.setNumber(0);
-            saveContext.saving(numerator);
-        }
-        dataManager.save(saveContext);
+        resetService.initNumerators();
         numeratorsDl.load();
     }
+
 }

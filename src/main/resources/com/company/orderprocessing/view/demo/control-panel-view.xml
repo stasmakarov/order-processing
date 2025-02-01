@@ -2,13 +2,24 @@
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:charts="http://jmix.io/schema/charts/ui"
       title="msg://demoView.title">
+    <data>
+        <collection id="itemsDc"
+                    class="com.company.orderprocessing.entity.Item">
+            <fetchPlan extends="_base"/>
+            <loader id="itemsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from ord_Item e order by e.name]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
     <layout>
         <hbox>
             <vbox>
                 <h4 text="Read orders from RabbitMQ"/>
                 <hbox>
-                    <button id="startReadingBtn" text="Start"/>
-                    <button id="stopReadingBtn" text="Stop"/>
+                    <button id="startReadingBtn" text="Start" themeNames="primary large" width="5em"/>
+                    <button id="stopReadingBtn" text="Stop" themeNames="error primary large" width="5em"/>
                 </hbox>
             </vbox>
             <vbox visible="true">
@@ -20,19 +31,63 @@
                     <button id="manufacturingStopBtn" text="Stop"/>
                 </hbox>
             </vbox>
+            <vbox>
+                <h4 text="Reset app"/>
+                <button id="resetAppBtn" text="Reset" themeNames="error large"/>
+            </vbox>
         </hbox>
         <hbox>
-            <vbox>
+            <vbox width="5em">
                 <h4 text="Orders"/>
                 <h1 id="totalOrdersField"/>
             </vbox>
-            <vbox>
-                <charts:chart id="ordersChart" colorPalette="DARKCYAN"
-                              height="100%" minHeight="25em"
-                              alignSelf="STRETCH">
+            <vbox width="40em">
+                <h4 text="Orders by status"/>
+                <charts:chart id="ordersChart"
+                              colorPalette="BLUE LIMEGREEN YELLOW ORANGE PLUM SLATEGREY"
+                              height="100%" minHeight="20em" width="25em"
+                              alignSelf="BASELINE">
                     <charts:series>
-                        <charts:bar name="Orders"/>
+                        <charts:bar name="Orders" colorBy="DATA">
+                            <charts:tooltip/>
+                            <charts:itemStyle borderColor="CHARTREUSE"/>
+                        </charts:bar>
                     </charts:series>
+                    <charts:xAxes>
+                        <charts:xAxis type="CATEGORY" position="LEFT"
+                                      alignTicks="true"
+                                      interval="0">
+                            <charts:axisLabel rotate="-45"/>
+                        </charts:xAxis>
+                    </charts:xAxes>
+                    <charts:yAxes>
+                        <charts:yAxis/>
+                    </charts:yAxes>
+                </charts:chart>
+            </vbox>
+            <vbox>
+                <h3 text="Items"/>
+                <charts:chart id="itemsChart" colorPalette="GREEN ORANGE PLUM"
+                              height="100%" minHeight="25em" width="20em"
+                              alignSelf="STRETCH">
+                    <charts:tooltip trigger="AXIS">
+                        <charts:axisPointer type="SHADOW"/>
+                    </charts:tooltip>
+                    <charts:legend/>
+                    <charts:dataSet>
+                        <charts:source dataContainer="itemsDc"
+                                       categoryField="name"
+                                       valueFields="available reserved delivered"/>
+                    </charts:dataSet>
+
+                    <charts:series>
+                        <charts:bar name="Available" stack="stack" barWidth="40">
+                            <charts:itemStyle borderColor="CHARTREUSE"/>
+                        </charts:bar>
+                        <charts:bar name="Reserved" stack="stack"/>
+                        <charts:bar name="Delivered" stack="stack"/>
+                    </charts:series>
+
                     <charts:xAxes>
                         <charts:xAxis/>
                     </charts:xAxes>

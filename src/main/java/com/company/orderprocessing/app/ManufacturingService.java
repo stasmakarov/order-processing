@@ -1,11 +1,15 @@
 package com.company.orderprocessing.app;
 
 import com.company.orderprocessing.entity.Item;
+import com.company.orderprocessing.entity.OrderProcessingSettings;
+import com.company.orderprocessing.event.NewItemsProducedEvent;
 import com.vaadin.flow.component.notification.Notification;
+import io.jmix.appsettings.AppSettings;
 import io.jmix.core.DataManager;
 import io.jmix.core.SaveContext;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.Notifications;
+import io.jmix.flowui.UiEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,28 +24,30 @@ public class ManufacturingService {
     @Autowired
     private DataManager dataManager;
     @Autowired
-    private Notifications notifications;
+    private UiEventPublisher uiEventPublisher;
+    @Autowired
+    private AppSettings appSettings;
+
+    private final Random random = new Random();
 
     public void supplyItems() {
-        Random random = new Random();
-        systemAuthenticator.begin();
+        Integer maxItemsParty = appSettings.load(OrderProcessingSettings.class).getMaxItemsParty();
+        systemAuthenticator.begin("admin");
         try {
             SaveContext saveContext = new SaveContext();
             List<Item> items = dataManager.load(Item.class).all().list();
             for (Item item : items) {
-                Integer totalQuantity = item.getTotalQuantity();
-                item.setTotalQuantity(totalQuantity + random.nextInt(10));
+                Integer availableQty = item.getAvailable();
+                item.setAvailable(availableQty + random.nextInt(maxItemsParty));
                 saveContext.saving(item);
             }
             dataManager.save(saveContext);
+            uiEventPublisher.publishEvent(new NewItemsProducedEvent(this));
         } catch (Exception e) {
+            //noinspection JmixRuntimeException
             throw new RuntimeException(e);
         } finally {
             systemAuthenticator.end();
         }
-        notifications.create("Произведена новая партия товаров")
-                .withPosition(Notification.Position.BOTTOM_CENTER)
-                .withDuration(3000)
-                .show();
     }
 }

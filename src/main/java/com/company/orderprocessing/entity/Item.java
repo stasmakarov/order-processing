@@ -24,8 +24,8 @@ public class Item {
     @Column(name = "DESCRIPTION")
     private String description;
 
-    @Column(name = "TOTAL_QUANTITY")
-    private Integer totalQuantity = 0;
+    @Column(name = "AVAILABLE")
+    private Integer available = 0;
 
     @Column(name = "RESERVED")
     private Integer reserved = 0;
@@ -49,12 +49,12 @@ public class Item {
         this.reserved = reserved;
     }
 
-    public Integer getTotalQuantity() {
-        return totalQuantity;
+    public Integer getAvailable() {
+        return available;
     }
 
-    public void setTotalQuantity(Integer totalQuantity) {
-        this.totalQuantity = totalQuantity;
+    public void setAvailable(Integer available) {
+        this.available = available;
     }
 
     public String getDescription() {
