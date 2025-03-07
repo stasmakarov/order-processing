@@ -173,9 +173,15 @@ private void countItems() {
     @Subscribe(id = "startReadingBtn", subject = "clickListener")
     public void onStartReadingBtnClick(final ClickEvent<JmixButton> event) {
         if (rabbitService.isRabbitAvailable()) {
-            rabbitService.startListening();
-            startReadingBtn.setEnabled(false);
-            stopReadingBtn.setEnabled(true);
+            boolean started = rabbitService.startListening();
+            if (started) {
+                startReadingBtn.setEnabled(false);
+                stopReadingBtn.setEnabled(true);
+            } else {
+                notifications.create("Rabbit listener didn't start")
+                        .withType(Notifications.Type.ERROR)
+                        .show();
+            }
         } else {
             notifications.create("Rabbit is unavailable")
                     .withType(Notifications.Type.ERROR)

@@ -5,6 +5,7 @@ import io.jmix.appsettings.AppSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Lazy;
 
 
 @Configuration
+@EnableRabbit
 public class RabbitConfig {
     private static final Logger log = LoggerFactory.getLogger(RabbitConfig.class);
 
@@ -34,9 +36,18 @@ public class RabbitConfig {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry() {
-        return new RabbitListenerEndpointRegistry();
+    public String orderQueueName(AppSettings appSettings) {
+        return appSettings.load(OrderProcessingSettings.class).getQueueName();
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setConcurrentConsumers(3); // Adjust based on load
+        factory.setMaxConcurrentConsumers(10);
+        factory.setDefaultRequeueRejected(false); // Prevent requeuing on failure
+        return factory;
     }
 
     @Bean

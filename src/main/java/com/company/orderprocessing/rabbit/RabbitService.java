@@ -7,28 +7,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RabbitService {
     private static final Logger log = LoggerFactory.getLogger(RabbitService.class);
-    private boolean isRegistered = false;
 
-    @Autowired
-    private ConnectionFactory connectionFactory;
-    @Autowired
-    private RabbitListenerEndpointRegistry endpointRegistry;
-    @Autowired
-    private AppSettings appSettings;
+    private final RabbitListenerEndpointRegistry endpointRegistry;
+    private final ConnectionFactory connectionFactory;
+    private final AppSettings appSettings;
 
-    public boolean isRabbitMqAvailable() {
-        try {
-            connectionFactory.createConnection().close();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    public RabbitService(ConnectionFactory connectionFactory,
+                         RabbitListenerEndpointRegistry endpointRegistry,
+                         AppSettings appSettings) {
+        this.connectionFactory = connectionFactory;
+        this.endpointRegistry = endpointRegistry;
+        this.appSettings = appSettings;
     }
 
     public boolean isRabbitAvailable() {
@@ -42,11 +36,31 @@ public class RabbitService {
         }
     }
 
-    public void startListening() {
+    public boolean startListening() {
         MessageListenerContainer container = endpointRegistry.getListenerContainer("orderMessageListener");
-        if (container != null && !container.isRunning()) {
+
+        if (container == null) {
+            log.error("❌ RabbitMQ listener container is NULL");
+            return false;
+        }
+
+        if (container.isRunning()) {
+            log.warn("⚠️ RabbitMQ listener is already running.");
+            return false;
+        }
+
+        try {
             container.start();
-            log.info("Started listening to the queue.");
+            if (container.isRunning()) {
+                log.info("✅ RabbitMQ listener started successfully.");
+                return true;
+            } else {
+                log.error("❌ RabbitMQ listener failed to start.");
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("❌ Error while starting RabbitMQ listener: {}", e.getMessage(), e);
+            return false;
         }
     }
 

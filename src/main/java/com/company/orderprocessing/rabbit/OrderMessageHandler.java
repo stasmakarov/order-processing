@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 
 @Component
 public class OrderMessageHandler {
@@ -15,6 +16,7 @@ public class OrderMessageHandler {
     @Autowired
     private OrderService orderService;
 
+    @RabbitListener(id = "orderMessageListener", queues = "#{@orderQueueName}", autoStartup = "false")
     public void handleMessage(Message message) {
             try {
                 String json = new String(message.getBody());
