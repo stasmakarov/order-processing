@@ -1,6 +1,9 @@
-#.jmix
-.jmix/hsqldb/ord.tmp/*.*
-.jmix/hsqldb/ord.lck
+.jmix
+!.jmix/hsqldb/*.lobs
+!.jmix/hsqldb/*.log
+!.jmix/hsqldb/*.properties
+!.jmix/hsqldb/*.script
+
 
 .gradle
 build/
