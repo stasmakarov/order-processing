@@ -26,15 +26,10 @@ public class GeoCodingService {
             if (results.length > 0) {
                 double latitude = results[0].latitude();
                 double longitude = results[0].longitude();
-                return createPoint(latitude, longitude);
+                GeometryFactory geometryFactory = new GeometryFactory();
+                return geometryFactory.createPoint(new Coordinate(longitude, latitude));
             }
         }
         return null;
-    }
-
-    private Point createPoint(double latitude, double longitude) {
-        // Use JTS or any other library you prefer to create a Point
-        GeometryFactory geometryFactory = new GeometryFactory();
-        return geometryFactory.createPoint(new Coordinate(longitude, latitude));
     }
 }

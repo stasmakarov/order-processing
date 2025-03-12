@@ -37,11 +37,11 @@
                 <hbox id="buttonsPanel" classNames="buttons-panel">
                     <vbox>
                         <hbox>
-                            <button id="editButton" action="ordersDataGrid.edit"/>
-                            <button id="refreshButton" action="ordersDataGrid.refresh"/>
+                            <button id="editButton" action="ordersDataGrid.edit" visible="true"/>
+                            <button id="refreshButton" action="ordersDataGrid.refresh" visible="false"/>
                             <button id="removeButton" action="ordersDataGrid.remove" visible="false"/>
                             <button id="removeAllButton" text="msg://remove.all"/>
-                            <button id="refreshMapBtn" text="Refresh map"/>
+                            <button id="refreshMapBtn" text="Refresh map" visible="false"/>
                         </hbox>
                         <hbox>
                             <simplePagination id="pagination" visible="false"
@@ -83,11 +83,11 @@
                             <maps:osmSource/>
                         </maps:tile>
                         <maps:vector id="ordersLayer">
-                            <maps:cluster id="cluster">
+<!--                            <maps:cluster id="cluster">-->
                                 <maps:dataVectorSource id="dataVectorSource1"
                                                        dataContainer="ordersDc"
                                                        property="location"/>
-                            </maps:cluster>
+<!--                            </maps:cluster>-->
                         </maps:vector>
                     </maps:layers>
                     <!-- Define the boundaries for Moscow -->

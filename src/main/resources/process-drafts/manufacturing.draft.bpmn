@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
-  <signal id="manufacturing-full-stop" name="Manufacturing full stop" flowable:scope="global" />
-  <signal id="manufacturing-pause" name="Manufacturing pause" flowable:scope="global" />
-  <signal id="manufacturing-resume" name="Manufacturing resume" flowable:scope="global" />
   <collaboration id="Collaboration_0qrh1g2">
     <participant id="Participant_1560lxa" name="Manufacturing process" processRef="manufacturing-process" />
   </collaboration>
   <process id="manufacturing-process" name="Manufacturing process" isExecutable="true">
-    <serviceTask id="Activity_produce_items" name="Produce items" flowable:expression="${ord_ManufacturingService.supplyItems()}" jmix:taskType="springBean" jmix:beanName="ord_ManufacturingService">
+    <serviceTask id="Activity_produce_items" name="Produce items" flowable:expression="${ord_ManufacturingService.produceItems(item)}" jmix:taskType="springBean" jmix:beanName="ord_ManufacturingService">
       <extensionElements>
-        <jmix:springBean beanName="ord_ManufacturingService" methodName="supplyItems" />
+        <jmix:springBean beanName="ord_ManufacturingService" methodName="produceItems">
+          <jmix:methodParam name="item" type="com.company.orderprocessing.entity.Item" isVariable="true">item</jmix:methodParam>
+        </jmix:springBean>
       </extensionElements>
       <incoming>Flow_07iuc36</incoming>
       <outgoing>Flow_18mvo45</outgoing>
@@ -33,16 +32,6 @@
       <incoming>Flow_065oa16</incoming>
       <outgoing>Flow_07iuc36</outgoing>
     </exclusiveGateway>
-    <intermediateCatchEvent id="Event_suspend" name="Suspend">
-      <incoming>Flow_0p0cepw</incoming>
-      <outgoing>Flow_0utz42v</outgoing>
-      <signalEventDefinition id="SignalEventDefinition_0tjvli6" signalRef="manufacturing-pause" />
-    </intermediateCatchEvent>
-    <intermediateCatchEvent id="Event_resume" name="Resume">
-      <incoming>Flow_0utz42v</incoming>
-      <outgoing>Flow_065oa16</outgoing>
-      <signalEventDefinition id="SignalEventDefinition_154ybtp" signalRef="manufacturing-resume" />
-    </intermediateCatchEvent>
     <intermediateCatchEvent id="Event_full_stop" name="Full stop">
       <incoming>Flow_1fvx28t</incoming>
       <outgoing>Flow_09d8q9m</outgoing>
@@ -66,8 +55,21 @@
       <outgoing>Flow_18kf0cf</outgoing>
       <messageEventDefinition id="MessageEventDefinition_1ckm2xu" messageRef="manufacturing-start" />
     </startEvent>
+    <intermediateCatchEvent id="Event_suspend" name="Suspend">
+      <incoming>Flow_0p0cepw</incoming>
+      <outgoing>Flow_0utz42v</outgoing>
+      <messageEventDefinition id="MessageEventDefinition_03boq7p" messageRef="manufacturing-suspend" />
+    </intermediateCatchEvent>
+    <intermediateCatchEvent id="Event_resume" name="Resume">
+      <incoming>Flow_0utz42v</incoming>
+      <outgoing>Flow_065oa16</outgoing>
+      <messageEventDefinition id="MessageEventDefinition_13ptonw" messageRef="manufacturing-resume" />
+    </intermediateCatchEvent>
   </process>
+  <signal id="manufacturing-full-stop" name="Manufacturing full stop" flowable:scope="global" />
   <message id="manufacturing-start" name="Manufacturing start" />
+  <message id="manufacturing-suspend" name="Manufacturing suspend" />
+  <message id="manufacturing-resume" name="Manufacturing resume" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
     <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="Collaboration_0qrh1g2">
       <bpmndi:BPMNShape id="Participant_1560lxa_di" bpmnElement="Participant_1560lxa" isHorizontal="true">
@@ -87,18 +89,6 @@
       <bpmndi:BPMNShape id="Gateway_0nx4afu_di" bpmnElement="Gateway_0nx4afu" isMarkerVisible="true">
         <omgdc:Bounds x="135" y="143" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_06ua6zr_di" bpmnElement="Event_suspend">
-        <omgdc:Bounds x="392" y="252" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="388" y="295" width="44" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1u4a8ww_di" bpmnElement="Event_resume">
-        <omgdc:Bounds x="272" y="252" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="270" y="295" width="41" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0nlfpmq_di" bpmnElement="Event_full_stop">
         <omgdc:Bounds x="482" y="150" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -110,6 +100,18 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0lhtrjf_di" bpmnElement="startEvent1">
         <omgdc:Bounds x="62" y="150" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_12n8hwk_di" bpmnElement="Event_suspend">
+        <omgdc:Bounds x="392" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="388" y="295" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0iu0o4w_di" bpmnElement="Event_resume">
+        <omgdc:Bounds x="272" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="270" y="295" width="41" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_18kf0cf_di" bpmnElement="Flow_18kf0cf">
         <omgdi:waypoint x="98" y="168" />

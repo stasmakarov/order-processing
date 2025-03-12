@@ -42,9 +42,21 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @Column(name = "MAX_ITEMS_PARTY")
     private Integer maxItemsParty;
 
+    @AppSettingsDefault("50")
+    @Column(name = "MIN_ITEMS_AVAILABLE")
+    private Integer minItemsAvailable;
+
     @AppSettingsDefault("300")
     @Column(name = "MANUFACTURING_CYCLE")
     private Integer manufacturingCycle;
+
+    public Integer getMinItemsAvailable() {
+        return minItemsAvailable;
+    }
+
+    public void setMinItemsAvailable(Integer minItemsAvailable) {
+        this.minItemsAvailable = minItemsAvailable;
+    }
 
     public String getQueueName() {
         return queueName;

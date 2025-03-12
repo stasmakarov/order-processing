@@ -7,6 +7,7 @@ import com.company.orderprocessing.util.Iso8601Converter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.appsettings.AppSettings;
+import io.jmix.core.DataManager;
 import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -33,7 +35,7 @@ public class OrderService {
     @Autowired
     private SystemAuthenticator systemAuthenticator;
     @Autowired
-    private UnconstrainedDataManager unconstrainedDataManager;
+    private DataManager dataManager;
     @Autowired
     private NumeratorService numeratorService;
     @Autowired
@@ -100,11 +102,17 @@ public class OrderService {
     }
 
     private Item findItemByName(String name) {
-        Item item = unconstrainedDataManager.load(Item.class)
-                .query("select e from ord_Item e where e.name = :name")
-                .parameter("name", name)
-                .one();
-        return item;
+        systemAuthenticator.begin("admin");
+        try {
+            return dataManager.load(Item.class)
+                    .query("select e from ord_Item e where e.name = :name")
+                    .parameter("name", name)
+                    .one();
+        } catch (Exception ignored) {
+        } finally {
+            systemAuthenticator.end();
+        }
+        return null;
     }
 
     public boolean simulatePayment(Order order) {
@@ -126,7 +134,8 @@ public class OrderService {
 
     private boolean randomError() {
         int randomValue = random.nextInt(1,100);
-        Integer errorProbability = appSettings.load(OrderProcessingSettings.class).getPaymentErrorProbability();
+        Integer errorProbability = appSettings.load(OrderProcessingSettings.class)
+                .getPaymentErrorProbability();
         return randomValue < errorProbability;
     }
 
@@ -136,18 +145,25 @@ public class OrderService {
                              Integer quantity,
                              String orderNumber,
                              DelegateExecution execution) {
-        Order order = unconstrainedDataManager.create(Order.class);
-        order.setCustomer(customer);
-        order.setAddress(address);
-        order.setItem(item);
-        order.setQuantity(quantity);
-        order.setProcessInstanceId(execution.getProcessInstanceId());
-        order.setNumber(orderNumber);
-        order.setStatus(OrderStatus.NEW);
-        unconstrainedDataManager.save(order);
-        MDC.put("Order #", order.getNumber());
-        log.info("Order created: {}", order.getNumber());
-        return order;
+        systemAuthenticator.begin("admin");
+        try {
+            Order order = dataManager.create(Order.class);
+            order.setCustomer(customer);
+            order.setAddress(address);
+            order.setItem(item);
+            order.setQuantity(quantity);
+            order.setProcessInstanceId(execution.getProcessInstanceId());
+            order.setNumber(orderNumber);
+            order.setStatus(OrderStatus.NEW);
+            dataManager.save(order);
+            MDC.put("Order #", order.getNumber());
+            log.info("Order created: {}", order.getNumber());
+            return order;
+        } catch (IllegalArgumentException ignored) {
+        } finally {
+            systemAuthenticator.end();
+        }
+        return null;
     }
 
     public void setOrderStatus(Order order, int statusId) {
@@ -160,40 +176,61 @@ public class OrderService {
             case 60 -> OrderStatus.CANCELLED;
             default -> null;
         };
-        order.setStatus(status);
-        unconstrainedDataManager.save(order);
-        log.info("Order #: {}, Status set: {}", order.getNumber(), status);
-    }
-
-
-    public boolean doReservation(Order order) {
-        Item item = findItemByName(order.getItem().getName());
-        int availableQty = item.getAvailable();
-        int qtyToReserve = order.getQuantity();
-
-        if (availableQty >= qtyToReserve) { //reservation is possible
-            int reservedQty = item.getReserved();
-            item.setReserved(reservedQty + qtyToReserve);
-            item.setAvailable(availableQty - qtyToReserve);
-            unconstrainedDataManager.save(item);
-            log.info("Reservation: {}, qty: {}", item.getName(), qtyToReserve);
-            return true;
-        } else {
-            log.info("Reservation failed: {}, qty: {}", item.getName(), qtyToReserve);
-            return false;
+        systemAuthenticator.begin("admin");
+        try {
+            order.setStatus(status);
+            dataManager.save(order);
+            log.info("Order #: {}, Status set: {}", order.getNumber(), status);
+        } finally {
+            systemAuthenticator.end();
         }
     }
 
+
+    @Transactional
+    public boolean doReservation(Order order) {
+        Item item = findItemByName(order.getItem().getName());
+        if (item == null) return false;
+
+        int availableQty = item.getAvailable();
+        int qtyToReserve = order.getQuantity();
+
+        systemAuthenticator.begin("admin");
+        try {
+            if (availableQty >= qtyToReserve) { //reservation is possible
+                int reservedQty = item.getReserved();
+                item.setReserved(reservedQty + qtyToReserve);
+                item.setAvailable(availableQty - qtyToReserve);
+                dataManager.save(item);
+                log.info("Reservation: {}, qty: {}", item.getName(), qtyToReserve);
+                return true;
+            } else {
+                log.info("Reservation failed: {}, qty: {}", item.getName(), qtyToReserve);
+                return false;
+            }
+        } finally {
+            systemAuthenticator.end();
+        }
+    }
+
+    @Transactional
     public void cancelReservation(Order order) {
         Item item = findItemByName(order.getItem().getName());
+        if (item == null) return;
+
         int availableQty = item.getAvailable();
+        int reservedQty = item.getReserved();
         int qtyToCancelReserve = order.getQuantity();
 
-        int reservedQty = item.getReserved();
         item.setReserved(reservedQty - qtyToCancelReserve);
         item.setAvailable(availableQty + qtyToCancelReserve);
-        unconstrainedDataManager.save(item);
-        log.info("Canceling reservation: {}, qty: {}", item.getName(), qtyToCancelReserve);
+        systemAuthenticator.begin();
+        try {
+            dataManager.save(item);
+            log.info("Canceling reservation: {}, qty: {}", item.getName(), qtyToCancelReserve);
+        } finally {
+            systemAuthenticator.end();
+        }
     }
 
     public void confirmDelivery(Order order) {
@@ -213,10 +250,15 @@ public class OrderService {
         String address = order.getAddress();
         Point point = geoCodingService.verifyAddress(address);
         if (point != null) {
-            order.setStatus(OrderStatus.VERIFIED);
-            order.setLocation(point);
-            unconstrainedDataManager.save(order);
-            log.info("Address verified {}", address);
+            systemAuthenticator.begin();
+            try {
+                order.setStatus(OrderStatus.VERIFIED);
+                order.setLocation(point);
+                dataManager.save(order);
+                log.info("Address verified {}", address);
+            } finally {
+                systemAuthenticator.end();
+            }
         } else {
             throw new BpmnError("100");
         }

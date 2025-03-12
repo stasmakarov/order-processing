@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -92,6 +93,7 @@ public class DeliveryService {
      *
      * @param deliveryNumber the number of the delivery to perform
      */
+    @Transactional
     public void performDelivery(String deliveryNumber) {
         systemAuthenticator.begin("admin");
         SaveContext saveContext = new SaveContext();
@@ -120,12 +122,20 @@ public class DeliveryService {
                 Integer quantity = order.getQuantity();
                 orderedItem.setDelivered(orderedItem.getDelivered() + quantity);
                 orderedItem.setReserved(orderedItem.getReserved() - quantity);
+                if (orderedItem.getReserved() < 0) {
+                    System.out.println("Reservation < 0");
+                }
                 saveContext.saving(orderedItem);
             }
 
-            dataManager.save(saveContext);
-            uiEventPublisher.publishEvent(new DeliveryCompletedEvent(this, deliveryNumber));
-            log.info("Delivery completed: {}", deliveryNumber);
+            systemAuthenticator.begin("admin");
+            try {
+                dataManager.save(saveContext);
+                uiEventPublisher.publishEvent(new DeliveryCompletedEvent(this, deliveryNumber));
+                log.info("Delivery completed: {}", deliveryNumber);
+            } finally {
+                systemAuthenticator.end();
+            }
         }
     }
 

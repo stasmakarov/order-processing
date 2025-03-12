@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:flowable="http://flowable.org/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
+  <error id="reservation-error" name="Reservation error" errorCode="901" />
+  <error id="payment-error" name="Payment error" errorCode="902" />
+  <collaboration id="Collaboration_0ncq6j1">
+    <participant id="Participant_1nle9s4" name="Reservation &#38; Payment" processRef="reservation-and-payment" />
+  </collaboration>
   <process id="reservation-and-payment" name="Reservation and payment" isExecutable="true">
     <startEvent id="startEvent1">
       <extensionElements>
@@ -11,8 +16,6 @@
       </extensionElements>
       <outgoing>Flow_1c0d9vx</outgoing>
     </startEvent>
-    <sequenceFlow id="Flow_1c0d9vx" sourceRef="startEvent1" targetRef="Activity_119cw5i" />
-    <sequenceFlow id="Flow_0x4pael" sourceRef="Activity_119cw5i" targetRef="Activity_0cjpy4h" />
     <serviceTask id="Activity_0cjpy4h" name="Make payment" flowable:expression="${ord_OrderService.simulatePayment(order)}" flowable:resultVariable="paymentResult" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
       <extensionElements>
         <jmix:springBean />
@@ -23,9 +26,6 @@
       <incoming>Flow_0x4pael</incoming>
       <outgoing>Flow_19av9v9</outgoing>
     </serviceTask>
-    <boundaryEvent id="Event_compensate_reservation" attachedToRef="Activity_119cw5i">
-      <compensateEventDefinition id="CompensateEventDefinition_017gazs" />
-    </boundaryEvent>
     <endEvent id="Event_end_OK">
       <incoming>Flow_07zjyec</incoming>
     </endEvent>
@@ -45,7 +45,6 @@
       <incoming>Flow_1c0d9vx</incoming>
       <outgoing>Flow_0x4pael</outgoing>
     </serviceTask>
-    <sequenceFlow id="Flow_19av9v9" sourceRef="Activity_0cjpy4h" targetRef="Gateway_1b88i7m" />
     <intermediateThrowEvent id="Event_compensation">
       <incoming>Flow_1mjfaxt</incoming>
       <outgoing>Flow_146lrhj</outgoing>
@@ -56,28 +55,36 @@
       <outgoing>Flow_1mjfaxt</outgoing>
       <outgoing>Flow_07zjyec</outgoing>
     </exclusiveGateway>
-    <sequenceFlow id="Flow_1mjfaxt" name="Rollback" sourceRef="Gateway_1b88i7m" targetRef="Event_compensation">
-      <extensionElements>
-        <jmix:conditionDetails conditionSource="expression" />
-      </extensionElements>
-    </sequenceFlow>
-    <sequenceFlow id="Flow_146lrhj" sourceRef="Event_compensation" targetRef="Event_end_fail" />
+    <endEvent id="Event_end_fail">
+      <incoming>Flow_146lrhj</incoming>
+      <errorEventDefinition id="ErrorEventDefinition_1lmtfdl" errorRef="payment-error" />
+    </endEvent>
+    <boundaryEvent id="Event_compensate_reservation" attachedToRef="Activity_119cw5i">
+      <compensateEventDefinition id="CompensateEventDefinition_017gazs" />
+    </boundaryEvent>
+    <sequenceFlow id="Flow_1c0d9vx" sourceRef="startEvent1" targetRef="Activity_119cw5i" />
+    <sequenceFlow id="Flow_0x4pael" sourceRef="Activity_119cw5i" targetRef="Activity_0cjpy4h" />
+    <sequenceFlow id="Flow_19av9v9" sourceRef="Activity_0cjpy4h" targetRef="Gateway_1b88i7m" />
     <sequenceFlow id="Flow_07zjyec" name="Success" sourceRef="Gateway_1b88i7m" targetRef="Event_end_OK">
       <extensionElements>
         <jmix:conditionDetails conditionSource="expression" />
       </extensionElements>
       <conditionExpression xsi:type="tFormalExpression">${reservationResult &amp;&amp; paymentResult}</conditionExpression>
     </sequenceFlow>
-    <endEvent id="Event_end_fail">
-      <incoming>Flow_146lrhj</incoming>
-      <errorEventDefinition id="ErrorEventDefinition_1lmtfdl" errorRef="payment-error" />
-    </endEvent>
+    <sequenceFlow id="Flow_1mjfaxt" name="Rollback" sourceRef="Gateway_1b88i7m" targetRef="Event_compensation">
+      <extensionElements>
+        <jmix:conditionDetails conditionSource="expression" />
+      </extensionElements>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_146lrhj" sourceRef="Event_compensation" targetRef="Event_end_fail" />
     <association id="Association_085nn0o" associationDirection="One" sourceRef="Event_compensate_reservation" targetRef="Activity_0ap5mr0" />
   </process>
-  <error id="reservation-error" name="Reservation error" errorCode="901" />
-  <error id="payment-error" name="Payment error" errorCode="902" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
-    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="reservation-and-payment">
+    <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="Collaboration_0ncq6j1">
+      <bpmndi:BPMNShape id="Participant_1nle9s4_di" bpmnElement="Participant_1nle9s4" isHorizontal="true">
+        <omgdc:Bounds x="70" y="108" width="690" height="250" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_startEvent1" bpmnElement="startEvent1">
         <omgdc:Bounds x="122" y="150" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -105,6 +112,11 @@
       <bpmndi:BPMNShape id="Event_1d8kasn_di" bpmnElement="Event_end_fail">
         <omgdc:Bounds x="702" y="272" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
+        <omgdi:waypoint x="240" y="226" />
+        <omgdi:waypoint x="240" y="290" />
+        <omgdi:waypoint x="260" y="290" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Event_17iyxyg_di" bpmnElement="Event_compensate_reservation">
         <omgdc:Bounds x="222" y="190" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -120,6 +132,13 @@
         <omgdi:waypoint x="520" y="168" />
         <omgdi:waypoint x="585" y="168" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07zjyec_di" bpmnElement="Flow_07zjyec">
+        <omgdi:waypoint x="635" y="168" />
+        <omgdi:waypoint x="702" y="168" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="639" y="150" width="42" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1mjfaxt_di" bpmnElement="Flow_1mjfaxt">
         <omgdi:waypoint x="610" y="193" />
         <omgdi:waypoint x="610" y="272" />
@@ -130,18 +149,6 @@
       <bpmndi:BPMNEdge id="Flow_146lrhj_di" bpmnElement="Flow_146lrhj">
         <omgdi:waypoint x="628" y="290" />
         <omgdi:waypoint x="702" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_07zjyec_di" bpmnElement="Flow_07zjyec">
-        <omgdi:waypoint x="635" y="168" />
-        <omgdi:waypoint x="702" y="168" />
-        <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="639" y="150" width="42" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
-        <omgdi:waypoint x="240" y="226" />
-        <omgdi:waypoint x="240" y="290" />
-        <omgdi:waypoint x="260" y="290" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

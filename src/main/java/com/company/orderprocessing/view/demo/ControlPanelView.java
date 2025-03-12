@@ -5,10 +5,7 @@ import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.entity.Item;
 import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.entity.OrderStatus;
-import com.company.orderprocessing.event.DeliveryCompletedEvent;
-import com.company.orderprocessing.event.IncomingOrderEvent;
-import com.company.orderprocessing.event.NewItemsProducedEvent;
-import com.company.orderprocessing.event.RefreshViewEvent;
+import com.company.orderprocessing.event.*;
 import com.company.orderprocessing.rabbit.RabbitService;
 import com.company.orderprocessing.util.Iso8601Converter;
 import com.company.orderprocessing.view.main.MainView;
@@ -305,9 +302,31 @@ private void countItems() {
     }
 
     @EventListener
-    private void onNewItemsProduced(NewItemsProducedEvent event) {
+    private void onNewItemsProduced(NewItemsSuppliedEvent event) {
         updateItemsChart();
         notifications.create("New party of items produced")
+                .withPosition(Notification.Position.TOP_END)
+                .withDuration(3000)
+                .show();
+    }
+
+    @EventListener
+    private void onItemsProducedEvent(ItemsProducedEvent event) {
+        updateOrdersChart();
+        Item item = event.getItem();
+        notifications.create("Produced items: " + item.getName()
+                        + ", now available: " + item.getAvailable())
+                .withPosition(Notification.Position.TOP_END)
+                .withDuration(3000)
+                .show();
+    }
+
+    @EventListener
+    private void onItemsSuspendedEvent(ItemsProducedEvent event) {
+        updateOrdersChart();
+        Item item = event.getItem();
+        notifications.create("Item production suspended: " + item.getName()
+                        + ", now available: " + item.getAvailable())
                 .withPosition(Notification.Position.TOP_END)
                 .withDuration(3000)
                 .show();
@@ -317,6 +336,13 @@ private void countItems() {
     private void onRefreshEvent(RefreshViewEvent event) {
         updateOrdersChart();
         updateItemsChart();
+    }
+
+    @EventListener
+    private void onReservationErrorEvent(ReservationError event) {
+        notifications.create("Reservation error")
+                .withType(Notifications.Type.ERROR)
+                .show();
     }
 
 

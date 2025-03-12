@@ -33,6 +33,18 @@ public class Item {
     @Column(name = "DELIVERED")
     private Integer delivered = 0;
 
+    @Column(name = "VERSION", nullable = false)
+    @Version
+    private Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
     public Integer getDelivered() {
         return delivered;
     }
@@ -46,6 +58,8 @@ public class Item {
     }
 
     public void setReserved(Integer reserved) {
+        if (reserved < 0)
+            return;
         this.reserved = reserved;
     }
 

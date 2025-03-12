@@ -59,10 +59,10 @@ public class OrderListView extends StandardListView<Order> {
     private CollectionLoader<Order> ordersDl;
     @ViewComponent
     private DataGrid<Order> ordersDataGrid;
-    @ViewComponent("map.ordersLayer.cluster.dataVectorSource1")
+    @ViewComponent("map.ordersLayer.dataVectorSource1")
     private DataVectorSource<Order> dataVectorSource;
-    @ViewComponent("map.ordersLayer.cluster")
-    private ClusterSource cluster;
+//    @ViewComponent("map.ordersLayer.cluster")
+//    private ClusterSource cluster;
     @ViewComponent
     private CollectionContainer<Order> ordersDc;
 
@@ -71,7 +71,7 @@ public class OrderListView extends StandardListView<Order> {
         saveContext = new SaveContext();
         dataVectorSource.addGeoObjectClickListener(this::onGeoObjectClick);
         dataVectorSource.setStyleProvider(this::createStyleForOrder);
-        cluster.addPointStyles(createClusterStyle());
+//        cluster.addPointStyles(createClusterStyle());
     }
 
     @Subscribe
@@ -163,20 +163,20 @@ public class OrderListView extends StandardListView<Order> {
 
     @EventListener
     public void onOrderChanged(RefreshViewEvent event) {
-        ordersDc.getMutableItems().clear();
+//        ordersDc.getMutableItems().clear();
         ordersDl.load();
-        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
-        String orderNumber = event.getOrderNumber();
-        log.info("Changed order: {}", orderNumber);
+//        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
+//        String orderNumber = event.getOrderNumber();
+//        log.info("Changed order: {}", orderNumber);
     }
 
     @Subscribe(id = "refreshMapBtn", subject = "clickListener")
     public void onRefreshMapBtnClick(final ClickEvent<JmixButton> event) {
-        ordersDc.getMutableItems().clear();
-        ordersDl.load();
-        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
-        dataVectorSource.setStyleProvider(this::createStyleForOrder);
-        System.out.println("refresh map");
+//        ordersDc.getMutableItems().clear();
+//        ordersDl.load();
+//        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
+//        dataVectorSource.setStyleProvider(this::createStyleForOrder);
+//        System.out.println("refresh map");
     }
 
 }

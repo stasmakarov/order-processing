@@ -1,10 +1,8 @@
 package com.company.orderprocessing.listener;
 
 import com.company.orderprocessing.entity.Order;
-import com.company.orderprocessing.publisher.RequestEventPublisher;
 import com.company.orderprocessing.event.RequestSendEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
-import com.company.orderprocessing.repository.OrderRepository;
 import io.jmix.core.UnconstrainedDataManager;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.Execution;
@@ -18,9 +16,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component(value = "ord_RequestEventsListener")
-public class RequestEventsListener {
+public class RequestEventListener {
 
-    private static final Logger log = LoggerFactory.getLogger(RequestEventsListener.class);
+    private static final Logger log = LoggerFactory.getLogger(RequestEventListener.class);
     @Autowired
     private GeoCodingService geoCodingService;
     @Autowired

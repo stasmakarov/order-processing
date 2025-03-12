@@ -4,7 +4,9 @@
   <collaboration id="Collaboration_0g1rg9y">
     <participant id="Participant_0jzequf" name="Delivery process" processRef="delivery-process" />
     <participant id="Participant_13v3ppr" name="Order Event Listener" />
+    <participant id="Participant_0zazzhg" name="Order processing" />
     <messageFlow id="Flow_0uqx503" sourceRef="Participant_13v3ppr" targetRef="Event_1lupvge" />
+    <messageFlow id="Flow_00s4c1i" sourceRef="Activity_00pks50" targetRef="Participant_0zazzhg" />
   </collaboration>
   <process id="delivery-process" name="Delivery process" isExecutable="true">
     <startEvent id="Event_1lupvge">
@@ -211,9 +213,17 @@
         <omgdc:Bounds x="99" y="470" width="301" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_1n0rcrg_di" bpmnElement="Participant_0zazzhg" isHorizontal="true">
+        <omgdc:Bounds x="960" y="470" width="309" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0uqx503_di" bpmnElement="Flow_0uqx503">
         <omgdi:waypoint x="168" y="470" />
         <omgdi:waypoint x="168" y="348" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00s4c1i_di" bpmnElement="Flow_00s4c1i">
+        <omgdi:waypoint x="1110" y="290" />
+        <omgdi:waypoint x="1110" y="470" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

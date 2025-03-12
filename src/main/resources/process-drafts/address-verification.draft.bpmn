@@ -17,18 +17,10 @@
     <sequenceFlow id="Flow_0p0vqld" sourceRef="Activity_1m3q7ji" targetRef="Gateway_0dmoin6" />
     <eventBasedGateway id="Gateway_0dmoin6">
       <incoming>Flow_0p0vqld</incoming>
-      <outgoing>Flow_1m3fqkx</outgoing>
       <outgoing>Flow_1p0md2k</outgoing>
       <outgoing>Flow_1i0dgdd</outgoing>
+      <outgoing>Flow_1m3fqkx</outgoing>
     </eventBasedGateway>
-    <intermediateCatchEvent id="Event_1eif3b8">
-      <incoming>Flow_1m3fqkx</incoming>
-      <outgoing>Flow_02p1irt</outgoing>
-      <timerEventDefinition id="TimerEventDefinition_1mgh79s">
-        <timeDuration xsi:type="tFormalExpression">PT50S</timeDuration>
-      </timerEventDefinition>
-    </intermediateCatchEvent>
-    <sequenceFlow id="Flow_1m3fqkx" sourceRef="Gateway_0dmoin6" targetRef="Event_1eif3b8" />
     <intermediateCatchEvent id="Event_OK" name="OK">
       <incoming>Flow_1p0md2k</incoming>
       <outgoing>Flow_0oypf24</outgoing>
@@ -46,7 +38,6 @@
       <incoming>Flow_0oypf24</incoming>
     </endEvent>
     <sequenceFlow id="Flow_0oypf24" sourceRef="Event_OK" targetRef="Event_0ja16pi" />
-    <sequenceFlow id="Flow_02p1irt" sourceRef="Event_1eif3b8" targetRef="Activity_0osmd8v" />
     <serviceTask id="Activity_1m3q7ji" name="Send request to Nominatim" flowable:expression="${ord_AddressVerificator.verify(order,execution)}" jmix:taskType="springBean" jmix:beanName="ord_AddressVerificator">
       <extensionElements>
         <jmix:springBean beanName="ord_AddressVerificator" methodName="verify">
@@ -117,6 +108,15 @@ println "Counter: ${counter + 1}"
       <incoming>Flow_1sfvqy4</incoming>
       <outgoing>Flow_1riez5w</outgoing>
     </serviceTask>
+    <intermediateCatchEvent id="Event_1eif3b8">
+      <incoming>Flow_1m3fqkx</incoming>
+      <outgoing>Flow_02p1irt</outgoing>
+      <timerEventDefinition id="TimerEventDefinition_1mgh79s">
+        <timeDuration xsi:type="tFormalExpression">PT50S</timeDuration>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_02p1irt" sourceRef="Event_1eif3b8" targetRef="Activity_0osmd8v" />
+    <sequenceFlow id="Flow_1m3fqkx" sourceRef="Gateway_0dmoin6" targetRef="Event_1eif3b8" />
   </process>
   <message id="fake-address" name="Fake address" />
   <error id="fake-address-error" name="Fake address error" errorCode="400" />
@@ -132,9 +132,6 @@ println "Counter: ${counter + 1}"
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0hsfiqf_di" bpmnElement="Gateway_0dmoin6">
         <omgdc:Bounds x="605" y="143" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1eif3b8_di" bpmnElement="Event_1eif3b8">
-        <omgdc:Bounds x="702" y="52" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_14icsu2_di" bpmnElement="Event_OK">
         <omgdc:Bounds x="702" y="150" width="36" height="36" />
@@ -180,6 +177,9 @@ println "Counter: ${counter + 1}"
         <omgdc:Bounds x="780" y="240" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1eif3b8_di" bpmnElement="Event_1eif3b8">
+        <omgdc:Bounds x="702" y="42" width="36" height="36" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_18lp63d_di" bpmnElement="Flow_18lp63d">
         <omgdi:waypoint x="48" y="168" />
         <omgdi:waypoint x="100" y="168" />
@@ -194,8 +194,8 @@ println "Counter: ${counter + 1}"
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1m3fqkx_di" bpmnElement="Flow_1m3fqkx">
         <omgdi:waypoint x="630" y="143" />
-        <omgdi:waypoint x="630" y="70" />
-        <omgdi:waypoint x="702" y="70" />
+        <omgdi:waypoint x="630" y="60" />
+        <omgdi:waypoint x="702" y="60" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1p0md2k_di" bpmnElement="Flow_1p0md2k">
         <omgdi:waypoint x="655" y="168" />
@@ -215,7 +215,7 @@ println "Counter: ${counter + 1}"
         <omgdi:waypoint x="912" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_02p1irt_di" bpmnElement="Flow_02p1irt">
-        <omgdi:waypoint x="720" y="52" />
+        <omgdi:waypoint x="720" y="42" />
         <omgdi:waypoint x="720" y="0" />
         <omgdi:waypoint x="520" y="0" />
       </bpmndi:BPMNEdge>

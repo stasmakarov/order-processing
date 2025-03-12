@@ -57,6 +57,18 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     private Delivery delivery;
 
+    @Column(name = "VERSION", nullable = false)
+    @Version
+    private Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
     public Delivery getDelivery() {
         return delivery;
     }

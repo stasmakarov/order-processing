@@ -2,8 +2,6 @@ package com.company.orderprocessing.publisher;
 
 import com.company.orderprocessing.entity.Order;
 import com.company.orderprocessing.event.RequestSendEvent;
-import com.company.orderprocessing.event.ResponseFailEvent;
-import com.company.orderprocessing.event.ResponseOkEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
