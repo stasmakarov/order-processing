@@ -124,15 +124,6 @@ public class DeliveryListView extends StandardListView<Delivery> {
         return getApplicationContext().getBean(ViewValidation.class);
     }
 
-    @Subscribe(id = "removeAllButton", subject = "clickListener")
-    public void onRemoveAllButtonClick(final ClickEvent<JmixButton> event) {
-        deliveriesDc.setItems(null);
-        deliveryDc.setItem(null);
-        deliveryRepository.deleteAll();
-        deliveryDl.load();
-        updateControls(false);
-    }
-
     private void loadOrders(Delivery delivery) {
         List<Order> orders = orderRepository.findByDelivery(delivery);
         ordersDc.setItems(orders);

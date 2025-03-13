@@ -36,7 +36,6 @@
                 <hbox id="buttonsPanel" classNames="buttons-panel">
                     <button id="readButton" action="deliveriesDataGrid.read"/>
                     <button id="refreshButton" action="deliveriesDataGrid.refresh"/>
-                    <button id="removeAllButton" text="Remove all"/>
                     <simplePagination id="pagination" dataLoader="deliveriesDl"/>
                 </hbox>
                 <dataGrid id="deliveriesDataGrid"

@@ -1,11 +1,9 @@
 package com.company.orderprocessing.app;
 
-import com.company.orderprocessing.entity.Delivery;
-import com.company.orderprocessing.entity.Item;
-import com.company.orderprocessing.entity.Order;
-import com.company.orderprocessing.entity.OrderStatus;
-import com.company.orderprocessing.event.DeliveryCompletedEvent;
+import com.company.orderprocessing.entity.*;
 import com.company.orderprocessing.repository.DeliveryRepository;
+import com.company.orderprocessing.util.Iso8601Converter;
+import io.jmix.appsettings.AppSettings;
 import io.jmix.core.DataManager;
 import io.jmix.core.SaveContext;
 import io.jmix.core.security.SystemAuthenticator;
@@ -17,11 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.time.LocalDateTime.now;
 
@@ -43,6 +38,8 @@ public class DeliveryService {
     private UiEventPublisher uiEventPublisher;
     @Autowired
     private DeliveryRepository deliveryRepository;
+    @Autowired
+    private AppSettings appSettings;
 
     public List<Order> getOrdersWaitingDelivery() {
         systemAuthenticator.begin("admin");
@@ -78,6 +75,15 @@ public class DeliveryService {
         }
     }
 
+    public void startDeliveryProcess() {
+        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
+        int randomValue = random.nextInt(1, maxDelayTimer);
+        Map<String, Object> params = new HashMap<>();
+        params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
+        runtimeService.startProcessInstanceByMessage(MESSAGE_NAME, params);
+    }
+
+
     public void setBusinessKey(String deliveryNumber, DelegateExecution execution) {
         String processInstanceId = execution.getProcessInstanceId();
         systemAuthenticator.begin("admin");
@@ -88,62 +94,14 @@ public class DeliveryService {
         }
     }
 
-    /**
-     * Performs delivery for the given delivery number.
-     *
-     * @param deliveryNumber the number of the delivery to perform
-     */
-    @Transactional
     public void performDelivery(String deliveryNumber) {
-        systemAuthenticator.begin("admin");
-        SaveContext saveContext = new SaveContext();
-        Delivery delivery = getDelivery(deliveryNumber);
-        if (delivery == null) return;
-
-        List<Order> orders = delivery.getOrders();
-
-        // Collect item IDs from orders
-        List<UUID> itemIds = orders.stream()
-                .map(order -> order.getItem().getId())
-                .collect(Collectors.toList());
-        // Load only relevant items
-        List<Item> items = dataManager.load(Item.class)
-                .query("select i from ord_Item i where i.id in :itemIds")
-                .parameter("itemIds", itemIds)
-                .list();
-
-        Map<UUID, Item> itemMap = items.stream()
-                .collect(Collectors.toMap(Item::getId, Function.identity()));
-
-        for (Order order : orders) {
-            UUID itemId = order.getItem().getId();
-            Item orderedItem = itemMap.get(itemId);
-            if (orderedItem != null) {
-                Integer quantity = order.getQuantity();
-                orderedItem.setDelivered(orderedItem.getDelivered() + quantity);
-                orderedItem.setReserved(orderedItem.getReserved() - quantity);
-                if (orderedItem.getReserved() < 0) {
-                    System.out.println("Reservation < 0");
-                }
-                saveContext.saving(orderedItem);
-            }
-
-            systemAuthenticator.begin("admin");
-            try {
-                dataManager.save(saveContext);
-                uiEventPublisher.publishEvent(new DeliveryCompletedEvent(this, deliveryNumber));
-                log.info("Delivery completed: {}", deliveryNumber);
-            } finally {
-                systemAuthenticator.end();
-            }
-        }
+        System.out.println("Delivery has completed: " + deliveryNumber);
     }
 
-    private Delivery getDelivery(String deliveryNumber) {
-        Delivery delivery = null;
+    private Delivery getDeliveryByNumber(String deliveryNumber) {
         systemAuthenticator.begin("admin");
         try {
-            delivery = dataManager.load(Delivery.class)
+            return dataManager.load(Delivery.class)
                     .query("select e from ord_Delivery e where e.number = :number")
                     .parameter("number", deliveryNumber)
                     .one();
@@ -152,17 +110,17 @@ public class DeliveryService {
         } finally {
             systemAuthenticator.end();
         }
-        return delivery;
+        return null;
     }
 
 
-    public void sendMessage(Order order) {
+    public void sendMessageOrderDelivered(Order order) {
         String processInstanceId = order.getProcessInstanceId();
         systemAuthenticator.begin("admin");
         try {
             if (processInstanceId != null) {
                 List<EventSubscription> subscriptions = runtimeService.createEventSubscriptionQuery()
-    //                    .processInstanceId(processInstanceId)
+                        .processInstanceId(processInstanceId)
     //                    .eventName(MESSAGE_NAME)
                         .list();
 

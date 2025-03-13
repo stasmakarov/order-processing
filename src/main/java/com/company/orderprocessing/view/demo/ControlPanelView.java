@@ -302,15 +302,6 @@ private void countItems() {
     }
 
     @EventListener
-    private void onNewItemsProduced(NewItemsSuppliedEvent event) {
-        updateItemsChart();
-        notifications.create("New party of items produced")
-                .withPosition(Notification.Position.TOP_END)
-                .withDuration(3000)
-                .show();
-    }
-
-    @EventListener
     private void onItemsProducedEvent(ItemsProducedEvent event) {
         updateOrdersChart();
         Item item = event.getItem();
@@ -337,14 +328,6 @@ private void countItems() {
         updateOrdersChart();
         updateItemsChart();
     }
-
-    @EventListener
-    private void onReservationErrorEvent(ReservationError event) {
-        notifications.create("Reservation error")
-                .withType(Notifications.Type.ERROR)
-                .show();
-    }
-
 
     @Subscribe(id = "resetAppBtn", subject = "clickListener")
     public void onResetAppBtnClick(final ClickEvent<JmixButton> event) {

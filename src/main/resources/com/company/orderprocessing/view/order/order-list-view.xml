@@ -38,10 +38,6 @@
                     <vbox>
                         <hbox>
                             <button id="editButton" action="ordersDataGrid.edit" visible="true"/>
-                            <button id="refreshButton" action="ordersDataGrid.refresh" visible="false"/>
-                            <button id="removeButton" action="ordersDataGrid.remove" visible="false"/>
-                            <button id="removeAllButton" text="msg://remove.all"/>
-                            <button id="refreshMapBtn" text="Refresh map" visible="false"/>
                         </hbox>
                         <hbox>
                             <simplePagination id="pagination" visible="false"

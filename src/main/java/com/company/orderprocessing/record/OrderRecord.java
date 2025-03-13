@@ -1,4 +1,4 @@
-package com.company.orderprocessing.entity;
+package com.company.orderprocessing.record;
 
 public record OrderRecord(
         String customer,

@@ -28,7 +28,7 @@ public class RabbitService {
     public boolean isRabbitAvailable() {
         try {
             RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
-            String queueName = appSettings.load(OrderProcessingSettings.class).getQueueName();
+            String queueName = appSettings.load(OrderProcessingSettings.class).getOrderQueue();
             rabbitAdmin.getQueueProperties(queueName); // Attempt to access queue properties
             return true; // If successful, RabbitMQ is available
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.company.orderprocessing.listener;
 
+import com.company.orderprocessing.app.OrderService;
 import com.company.orderprocessing.entity.Order;
 import com.company.orderprocessing.event.RequestSendEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
@@ -24,7 +25,7 @@ public class RequestEventListener {
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
-    private UnconstrainedDataManager unconstrainedDataManager;
+    private OrderService orderService;
 
     @Async
     @EventListener
@@ -34,8 +35,7 @@ public class RequestEventListener {
         Point point = geoCodingService.verifyAddress(order.getAddress());
 
         if (point != null) {
-            order.setLocation(point);
-            unconstrainedDataManager.save(order);
+            orderService.setLocation(order, point);
             sendMessageToProcess("Address OK", processInstanceId);
             log.info("Order # {}, Address verified: {}", order.getNumber(), order.getAddress());
         } else {

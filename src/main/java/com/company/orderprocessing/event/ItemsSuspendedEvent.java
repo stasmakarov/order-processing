@@ -1,4 +1,4 @@
-package com.company.orderprocessing.listener;
+package com.company.orderprocessing.event;
 
 import com.company.orderprocessing.entity.Item;
 import org.springframework.context.ApplicationEvent;

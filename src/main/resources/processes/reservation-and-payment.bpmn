@@ -16,7 +16,7 @@
       </extensionElements>
       <outgoing>Flow_1c0d9vx</outgoing>
     </startEvent>
-    <serviceTask id="Activity_0cjpy4h" name="Make payment" flowable:expression="${ord_OrderService.simulatePayment(order)}" flowable:resultVariable="paymentResult" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+    <serviceTask id="Activity_0cjpy4h" name="Make payment" flowable:async="true" flowable:expression="${ord_OrderService.simulatePayment(order)}" flowable:resultVariable="paymentResult" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
       <extensionElements>
         <jmix:springBean />
         <jmix:springBean beanName="ord_OrderService" methodName="simulatePayment">
@@ -29,14 +29,14 @@
     <endEvent id="Event_end_OK">
       <incoming>Flow_07zjyec</incoming>
     </endEvent>
-    <serviceTask id="Activity_0ap5mr0" name="Cancel reservation" isForCompensation="true" flowable:expression="${ord_OrderService.cancelReservation(order)}" flowable:resultVariable="reservationCancelled" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+    <serviceTask id="Activity_0ap5mr0" name="Cancel reservation" isForCompensation="true" flowable:async="true" flowable:expression="${ord_OrderService.cancelReservation(order)}" flowable:resultVariable="reservationCancelled" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
       <extensionElements>
         <jmix:springBean beanName="ord_OrderService" methodName="cancelReservation">
           <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
         </jmix:springBean>
       </extensionElements>
     </serviceTask>
-    <serviceTask id="Activity_119cw5i" name="Do reservation" flowable:expression="${ord_OrderService.doReservation(order)}" flowable:resultVariable="reservationResult" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+    <serviceTask id="Activity_119cw5i" name="Do reservation" flowable:expression="${ord_OrderService.doReservation(order)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
       <extensionElements>
         <jmix:springBean beanName="ord_OrderService" methodName="doReservation">
           <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
@@ -112,11 +112,6 @@
       <bpmndi:BPMNShape id="Event_1d8kasn_di" bpmnElement="Event_end_fail">
         <omgdc:Bounds x="702" y="272" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
-        <omgdi:waypoint x="240" y="226" />
-        <omgdi:waypoint x="240" y="290" />
-        <omgdi:waypoint x="260" y="290" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Event_17iyxyg_di" bpmnElement="Event_compensate_reservation">
         <omgdc:Bounds x="222" y="190" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -149,6 +144,11 @@
       <bpmndi:BPMNEdge id="Flow_146lrhj_di" bpmnElement="Flow_146lrhj">
         <omgdi:waypoint x="628" y="290" />
         <omgdi:waypoint x="702" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
+        <omgdi:waypoint x="240" y="226" />
+        <omgdi:waypoint x="240" y="290" />
+        <omgdi:waypoint x="260" y="290" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

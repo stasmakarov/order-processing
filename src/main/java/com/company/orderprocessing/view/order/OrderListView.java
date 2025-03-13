@@ -5,19 +5,16 @@ import com.company.orderprocessing.entity.OrderStatus;
 import com.company.orderprocessing.event.RefreshViewEvent;
 import com.company.orderprocessing.repository.OrderRepository;
 import com.company.orderprocessing.view.main.MainView;
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.DataManager;
 import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.data.grid.DataGridItems;
-import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
 import io.jmix.mapsflowui.component.GeoMap;
 import io.jmix.mapsflowui.component.data.DataVectorSourceItems;
-import io.jmix.mapsflowui.component.model.source.ClusterSource;
 import io.jmix.mapsflowui.component.model.source.DataVectorSource;
 import io.jmix.mapsflowui.component.model.source.GeoObjectClickNotifier;
 import io.jmix.mapsflowui.kit.component.model.Padding;
@@ -28,15 +25,12 @@ import io.jmix.mapsflowui.kit.component.model.style.image.CircleStyle;
 import io.jmix.mapsflowui.kit.component.model.style.image.IconOrigin;
 import io.jmix.mapsflowui.kit.component.model.style.image.IconStyle;
 import io.jmix.mapsflowui.kit.component.model.style.text.TextStyle;
-import org.locationtech.jts.geom.Coordinate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
 
 
 @Route(value = "orders", layout = MainView.class)
@@ -154,29 +148,9 @@ public class OrderListView extends StandardListView<Order> {
         }
     }
 
-
-    @Subscribe(id = "removeAllButton", subject = "clickListener")
-    public void onRemoveAllButtonClick(final ClickEvent<JmixButton> event) {
-        orderRepository.deleteAll();
-        ordersDl.load();
-    }
-
     @EventListener
     public void onOrderChanged(RefreshViewEvent event) {
-//        ordersDc.getMutableItems().clear();
         ordersDl.load();
-//        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
-//        String orderNumber = event.getOrderNumber();
-//        log.info("Changed order: {}", orderNumber);
-    }
-
-    @Subscribe(id = "refreshMapBtn", subject = "clickListener")
-    public void onRefreshMapBtnClick(final ClickEvent<JmixButton> event) {
-//        ordersDc.getMutableItems().clear();
-//        ordersDl.load();
-//        DataVectorSourceItems<Order> items = dataVectorSource.getItems();
-//        dataVectorSource.setStyleProvider(this::createStyleForOrder);
-//        System.out.println("refresh map");
     }
 
 }

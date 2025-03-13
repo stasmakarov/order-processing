@@ -19,8 +19,12 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     private UUID uuid;
 
     @AppSettingsDefault("orders")
-    @Column(name = "QUEUE_NAME")
-    private String queueName;
+    @Column(name = "ORDER_QUEUE")
+    private String orderQueue;
+
+    @AppSettingsDefault("inventory")
+    @Column(name = "INVENTORY_QUEUE")
+    private String inventoryQueue;
 
     @AppSettingsDefault("3")
     @Column(name = "DELIVERY_PACKAGE")
@@ -50,6 +54,14 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @Column(name = "MANUFACTURING_CYCLE")
     private Integer manufacturingCycle;
 
+    public String getInventoryQueue() {
+        return inventoryQueue;
+    }
+
+    public void setInventoryQueue(String inventoryQueue) {
+        this.inventoryQueue = inventoryQueue;
+    }
+
     public Integer getMinItemsAvailable() {
         return minItemsAvailable;
     }
@@ -58,12 +70,12 @@ public class OrderProcessingSettings extends AppSettingsEntity {
         this.minItemsAvailable = minItemsAvailable;
     }
 
-    public String getQueueName() {
-        return queueName;
+    public String getOrderQueue() {
+        return orderQueue;
     }
 
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
+    public void setOrderQueue(String orderQueue) {
+        this.orderQueue = orderQueue;
     }
 
     public Integer getMaxDelayTimer() {

@@ -1,14 +1,15 @@
 package com.company.orderprocessing.app;
 
+import com.company.orderprocessing.record.OrderRecord;
 import com.company.orderprocessing.entity.*;
 import com.company.orderprocessing.event.IncomingOrderEvent;
 import com.company.orderprocessing.nominatim.GeoCodingService;
+import com.company.orderprocessing.rabbit.InventoryMessageProducer;
 import com.company.orderprocessing.util.Iso8601Converter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.appsettings.AppSettings;
 import io.jmix.core.DataManager;
-import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
 import org.flowable.engine.RuntimeService;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -39,6 +39,8 @@ public class OrderService {
     @Autowired
     private NumeratorService numeratorService;
     @Autowired
+    private InventoryService inventoryService;
+    @Autowired
     private RuntimeService runtimeService;
     @Autowired
     private GeoCodingService geoCodingService;
@@ -46,6 +48,8 @@ public class OrderService {
     private UiEventPublisher uiEventPublisher;
     @Autowired
     private AppSettings appSettings;
+    @Autowired
+    private InventoryMessageProducer inventoryMessageProducer;
 
 
     public void startOrderProcess(String json) {
@@ -167,15 +171,7 @@ public class OrderService {
     }
 
     public void setOrderStatus(Order order, int statusId) {
-        OrderStatus status = switch (statusId) {
-            case 10 -> OrderStatus.NEW;
-            case 20 -> OrderStatus.VERIFIED;
-            case 30 -> OrderStatus.READY;
-            case 40 -> OrderStatus.IN_DELIVERY;
-            case 50 -> OrderStatus.COMPLETED;
-            case 60 -> OrderStatus.CANCELLED;
-            default -> null;
-        };
+        OrderStatus status = OrderStatus.fromId(statusId);
         systemAuthenticator.begin("admin");
         try {
             order.setStatus(status);
@@ -186,67 +182,23 @@ public class OrderService {
         }
     }
 
+    public void doReservation(Order order) {
+        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.RESERVATION);
 
-    @Transactional
-    public boolean doReservation(Order order) {
-        Item item = findItemByName(order.getItem().getName());
-        if (item == null) return false;
-
-        int availableQty = item.getAvailable();
-        int qtyToReserve = order.getQuantity();
-
-        systemAuthenticator.begin("admin");
-        try {
-            if (availableQty >= qtyToReserve) { //reservation is possible
-                int reservedQty = item.getReserved();
-                item.setReserved(reservedQty + qtyToReserve);
-                item.setAvailable(availableQty - qtyToReserve);
-                dataManager.save(item);
-                log.info("Reservation: {}, qty: {}", item.getName(), qtyToReserve);
-                return true;
-            } else {
-                log.info("Reservation failed: {}, qty: {}", item.getName(), qtyToReserve);
-                return false;
-            }
-        } finally {
-            systemAuthenticator.end();
-        }
+        log.info("Try reservation for order {}", order.getNumber());
     }
 
-    @Transactional
     public void cancelReservation(Order order) {
-        Item item = findItemByName(order.getItem().getName());
-        if (item == null) return;
-
-        int availableQty = item.getAvailable();
-        int reservedQty = item.getReserved();
-        int qtyToCancelReserve = order.getQuantity();
-
-        item.setReserved(reservedQty - qtyToCancelReserve);
-        item.setAvailable(availableQty + qtyToCancelReserve);
-        systemAuthenticator.begin();
-        try {
-            dataManager.save(item);
-            log.info("Canceling reservation: {}, qty: {}", item.getName(), qtyToCancelReserve);
-        } finally {
-            systemAuthenticator.end();
-        }
+        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.CANCEL_RESERVATION);
+        log.info("✅Cancelled reservation for order {}", order.getNumber());
     }
 
     public void confirmDelivery(Order order) {
-//        Item item = findItemByName(order.getItem().getName());
-//
-//        int deliveredQty = item.getDelivered();
-//        int reservedQty = item.getReserved();
-//        int itemsInOrder = order.getQuantity();
-//
-//        item.setDelivered(deliveredQty + itemsInOrder);
-//        item.setReserved(reservedQty - itemsInOrder);
-//        unconstrainedDataManager.save(item);
+        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.DELIVERY);
+        log.info("✅Delivery completed for order {}", order.getNumber());
     }
 
     public void addressVerification(Order order) {
-        MDC.put("Order #", order.getNumber());
         String address = order.getAddress();
         Point point = geoCodingService.verifyAddress(address);
         if (point != null) {
@@ -264,4 +216,13 @@ public class OrderService {
         }
     }
 
+    public void setLocation(Order order, Point point) {
+        systemAuthenticator.begin("admin");
+        try {
+            order.setLocation(point);
+            dataManager.save(order);
+        } finally {
+            systemAuthenticator.end();
+        }
+    }
 }

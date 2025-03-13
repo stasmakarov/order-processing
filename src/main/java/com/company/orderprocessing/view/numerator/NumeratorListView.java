@@ -25,8 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @DialogMode(width = "64em")
 public class NumeratorListView extends StandardListView<Numerator> {
 
-    @Autowired
-    private DataManager dataManager;
+
     @Autowired
     private ResetService resetService;
 
@@ -125,12 +124,6 @@ public class NumeratorListView extends StandardListView<Numerator> {
 
     private ViewValidation getViewValidation() {
         return getApplicationContext().getBean(ViewValidation.class);
-    }
-
-    @Subscribe(id = "resetAllBtn", subject = "clickListener")
-    public void onResetAllBtnClick(final ClickEvent<JmixButton> event) {
-        resetService.initNumerators();
-        numeratorsDl.load();
     }
 
 }

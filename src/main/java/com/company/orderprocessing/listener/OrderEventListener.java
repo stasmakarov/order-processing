@@ -1,5 +1,7 @@
 package com.company.orderprocessing.listener;
 
+import com.company.orderprocessing.app.DeliveryService;
+import com.company.orderprocessing.app.InventoryService;
 import com.company.orderprocessing.entity.Order;
 import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.entity.OrderStatus;
@@ -37,39 +39,23 @@ public class OrderEventListener {
     private final RuntimeService runtimeService;
     private final UiEventPublisher uiEventPublisher;
     private final AppSettings appSettings;
+    private final DeliveryService deliveryService;
 
 
     public OrderEventListener(DataManager dataManager,
                               SystemAuthenticator systemAuthenticator,
                               RuntimeService runtimeService,
                               UiEventPublisher uiEventPublisher,
-                              AppSettings appSettings) {
+                              AppSettings appSettings,
+                              DeliveryService deliveryService
+    ) {
         this.dataManager = dataManager;
         this.systemAuthenticator = systemAuthenticator;
         this.runtimeService = runtimeService;
         this.uiEventPublisher = uiEventPublisher;
         this.appSettings = appSettings;
+        this.deliveryService = deliveryService;
     }
-
-    /**
-     * Listens for changes to the {@link Order} entity and triggers actions based on the order's status.
-     * If the status has changed to READY, it counts the number of orders with that status.
-     * If the count exceeds a predefined limit, it starts a process instance by sending a message.
-     *
-     * @param event The {@link EntityChangedEvent} containing details about the changes made to the
-     *              {@link Order} entity. This event includes information about the type of change
-     *              (e.g., created, updated, deleted) and specific field changes.
-     *
-     * @throws RuntimeException if an error occurs while querying the database or starting the process
-     *                          instance. The exception is wrapped in a RuntimeException to indicate
-     *                          that it should be handled at a higher level.
-     *
-     * <p>
-     * Note: This method is intended to be used within a transactional context. It relies on the
-     * {@link DataManager} to perform database operations and may affect system behavior based on
-     * order status changes.
-     * </p>
-     */
 
     @SuppressWarnings("JmixRuntimeException")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -91,7 +77,7 @@ public class OrderEventListener {
             Order order = dataManager.load(entityId).one();
             if (count > settings.getDeliveryPackage()) {
                 log.info("Number of orders with status READY:{}. The delivery process will be started.", count);
-                startDeliveryProcess(settings);
+                deliveryService.startDeliveryProcess();
             }
             uiEventPublisher.publishEvent(new RefreshViewEvent(this, order.getNumber()));
         } catch (Exception e) {
@@ -101,11 +87,4 @@ public class OrderEventListener {
         }
     }
 
-    private void startDeliveryProcess(OrderProcessingSettings settings) {
-        Integer maxDelayTimer = settings.getMaxDelayTimer();
-        int randomValue = random.nextInt(1, maxDelayTimer);
-        Map<String, Object> params = new HashMap<>();
-        params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
-        runtimeService.startProcessInstanceByMessage(MESSAGE_NAME, params);
-    }
 }

@@ -8,14 +8,10 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 
 
 @Configuration
@@ -37,7 +33,7 @@ public class RabbitConfig {
 
     @Bean
     public String orderQueueName(AppSettings appSettings) {
-        return appSettings.load(OrderProcessingSettings.class).getQueueName();
+        return appSettings.load(OrderProcessingSettings.class).getOrderQueue();
     }
 
     @Bean
@@ -55,7 +51,7 @@ public class RabbitConfig {
                                                             RabbitMQConnectionService connectionService,
                                                             MessageListenerAdapter listenerAdapter,
                                                             AppSettings appSettings) {
-        String queueName = appSettings.load(OrderProcessingSettings.class).getQueueName();
+        String queueName = appSettings.load(OrderProcessingSettings.class).getOrderQueue();
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionService.getConnectionFactory());
         container.setQueueNames(queueName);
