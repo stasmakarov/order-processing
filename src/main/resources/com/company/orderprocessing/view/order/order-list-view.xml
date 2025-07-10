@@ -7,7 +7,13 @@
         <collection id="ordersDc"
                     class="com.company.orderprocessing.entity.Order">
             <fetchPlan extends="_base">
-                <property name="item" fetchPlan="_instance_name"/>
+                <property name="item">
+<!--                    <property name="name"/>-->
+<!--                    <property name="description"/>-->
+<!--                    <property name="available"/>-->
+                    <property name="reserved"/>
+                    <property name="delivered"/>
+                </property>
             </fetchPlan>
             <loader id="ordersDl" readOnly="true">
                 <query>
@@ -80,7 +86,7 @@
                         </maps:tile>
                         <maps:vector id="ordersLayer">
 <!--                            <maps:cluster id="cluster">-->
-                                <maps:dataVectorSource id="dataVectorSource1"
+                                <maps:dataVectorSource id="dataVectorSource1" featureSelectEnabled="true"
                                                        dataContainer="ordersDc"
                                                        property="location"/>
 <!--                            </maps:cluster>-->

@@ -22,23 +22,25 @@
                     <button id="stopReadingBtn" text="Stop" themeNames="error primary large" width="5em"/>
                 </hbox>
             </vbox>
-            <vbox visible="true">
-                <h4 text="msg://Manufacturing"/>
+            <vbox>
+                <h4 text="Reset app" width="210px"/>
+                <button id="resetAppBtn" text="Reset" themeNames="error large"/>
+            </vbox>
+            <vbox>
+                <h4 text="Manage BPM Engine"/>
                 <hbox>
-                    <button id="manufacturingStartBtn" text="Start"/>
-                    <button id="manufacturingPauseBtn" text="Pause"/>
-                    <button id="manufacturingResumeBtn" text="Resume"/>
-                    <button id="manufacturingStopBtn" text="Stop"/>
+                    <button id="startEngineBtn" text="Start" themeNames="primary large" width="5em"/>
+                    <button id="stopEngineBtn" text="Stop" themeNames="error primary large" width="5em"/>
                 </hbox>
             </vbox>
             <vbox>
-                <h4 text="Reset app"/>
-                <button id="resetAppBtn" text="Reset" themeNames="error large"/>
+                <h3 text="Manufacturing"/>
+                <hbox id="manufacturingStatusBox" spacing="true"/>
             </vbox>
         </hbox>
         <hbox>
             <vbox width="5em">
-                <h4 text="Orders"/>
+                <h3 text="Orders"/>
                 <h1 id="totalOrdersField"/>
             </vbox>
             <vbox width="40em">
@@ -79,7 +81,6 @@
                                        categoryField="name"
                                        valueFields="available reserved delivered"/>
                     </charts:dataSet>
-
                     <charts:series>
                         <charts:bar name="Available" stack="stack" barWidth="40">
                             <charts:itemStyle borderColor="CHARTREUSE"/>
@@ -87,7 +88,6 @@
                         <charts:bar name="Reserved" stack="stack"/>
                         <charts:bar name="Delivered" stack="stack"/>
                     </charts:series>
-
                     <charts:xAxes>
                         <charts:xAxis/>
                     </charts:xAxes>

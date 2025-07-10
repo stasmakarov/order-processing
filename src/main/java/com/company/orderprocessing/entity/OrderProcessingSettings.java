@@ -26,6 +26,10 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @Column(name = "INVENTORY_QUEUE")
     private String inventoryQueue;
 
+    @AppSettingsDefault("reply")
+    @Column(name = "REPLY_QUEUE")
+    private String replyQueue;
+
     @AppSettingsDefault("3")
     @Column(name = "DELIVERY_PACKAGE")
     private Integer deliveryPackage;
@@ -53,6 +57,14 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @AppSettingsDefault("300")
     @Column(name = "MANUFACTURING_CYCLE")
     private Integer manufacturingCycle;
+
+    public String getReplyQueue() {
+        return replyQueue;
+    }
+
+    public void setReplyQueue(String replyQueue) {
+        this.replyQueue = replyQueue;
+    }
 
     public String getInventoryQueue() {
         return inventoryQueue;

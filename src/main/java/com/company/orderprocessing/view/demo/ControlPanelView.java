@@ -1,8 +1,11 @@
 package com.company.orderprocessing.view.demo;
 
 
+import com.company.orderprocessing.app.FlowableEngineManager;
+import com.company.orderprocessing.app.ManufacturingService;
 import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.entity.Item;
+import com.company.orderprocessing.entity.ManufacturingProcessStatus;
 import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.entity.OrderStatus;
 import com.company.orderprocessing.event.*;
@@ -10,9 +13,13 @@ import com.company.orderprocessing.rabbit.RabbitService;
 import com.company.orderprocessing.util.Iso8601Converter;
 import com.company.orderprocessing.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.appsettings.AppSettings;
 import io.jmix.chartsflowui.component.Chart;
@@ -22,7 +29,7 @@ import io.jmix.chartsflowui.kit.data.chart.ListChartItems;
 import io.jmix.core.DataManager;
 import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.Notifications;
-import io.jmix.flowui.UiEventPublisher;
+import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionContainer;
@@ -44,49 +51,28 @@ import static java.util.Comparator.comparingInt;
 @ViewController(id = "ord_ControlPanelView")
 @ViewDescriptor(path = "control-panel-view.xml")
 public class ControlPanelView extends StandardView {
+
     private static final Logger log = LoggerFactory.getLogger(ControlPanelView.class);
+    private final LinkedHashMap<String, Long> orders = new LinkedHashMap<>();
+    private Long totalOrders;
 
-    private static final String ORDER_PROCESSING = "order-processing";
-    private static final String ADDRESS_VERIFICATION = "address-verification";
-    private static final String PAYMENT_AND_RESERVATION = "payment-and-reservation";
-    private static final String DELIVERY_PROCESS = "delivery-process";
-    private static final String MANUFACTURING_PROCESS = "manufacturing-process";
-
-    @ViewComponent
-    private JmixButton startReadingBtn;
-    @ViewComponent
-    private JmixButton stopReadingBtn;
-
-    @Autowired
-    private AppSettings appSettings;
     @Autowired
     private DataManager dataManager;
     @Autowired
-    private RuntimeService runtimeService;
-    @Autowired
     private RabbitService rabbitService;
+    @Autowired
+    private ManufacturingService manufacturingService;
     @Autowired
     private ResetService resetService;
     @Autowired
     private Notifications notifications;
     @Autowired
     private Dialogs dialogs;
-    @Autowired
-    private UiEventPublisher uiEventPublisher;
 
     @ViewComponent
-    private JmixButton manufacturingStartBtn;
+    private JmixButton startReadingBtn;
     @ViewComponent
-    private JmixButton manufacturingPauseBtn;
-    @ViewComponent
-    private JmixButton manufacturingResumeBtn;
-    @ViewComponent
-    private JmixButton manufacturingStopBtn;
-
-    private Map<String, Integer> processes;
-    private final LinkedHashMap<String, Long> orders = new LinkedHashMap<>();
-//    private final LinkedHashMap<String, Long> items = new LinkedHashMap<>();
-    private Long totalOrders;
+    private JmixButton stopReadingBtn;
     @ViewComponent
     private H1 totalOrdersField;
     @ViewComponent
@@ -96,7 +82,11 @@ public class ControlPanelView extends StandardView {
     @ViewComponent
     private CollectionLoader<Item> itemsDl;
     @ViewComponent
-    private CollectionContainer<Item> itemsDc;
+    private HorizontalLayout manufacturingStatusBox;
+    @Autowired
+    private UiComponents uiComponents;
+    @Autowired
+    private FlowableEngineManager flowableEngineManager;
 
     @Subscribe
     public void onInit(final InitEvent event) {
@@ -132,19 +122,19 @@ public class ControlPanelView extends StandardView {
         totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
     }
 
-private void countItems() {
-        List<OrderStatus> sortedStatuses = Arrays.stream(OrderStatus.values())
-                .sorted(comparingInt(OrderStatus::getId)).toList();
-
-        for (OrderStatus status : sortedStatuses) {
-            long count = dataManager.loadValue(
-                            "select count(e) from ord_Item e where e.status = :status", Long.class)
-                    .parameter("status", status.getId())
-                    .one();
-            orders.put(status.name(), count);
-        }
-        totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
-    }
+//private void countItems() {
+//        List<OrderStatus> sortedStatuses = Arrays.stream(OrderStatus.values())
+//                .sorted(comparingInt(OrderStatus::getId)).toList();
+//
+//        for (OrderStatus status : sortedStatuses) {
+//            long count = dataManager.loadValue(
+//                            "select count(e) from ord_Item e where e.status = :status", Long.class)
+//                    .parameter("status", status.getId())
+//                    .one();
+//            orders.put(status.name(), count);
+//        }
+//        totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
+//    }
 
     private ListChartItems<MapDataItem> getOrderCountersMap() {
         ListChartItems<MapDataItem> mapChartItems = new ListChartItems<>();
@@ -163,9 +153,9 @@ private void countItems() {
             stopReadingBtn.setEnabled(false);
         }
         updateItemsChart();
-        manufacturingButtonsUpdate();
+        initiateManufacturingBox();
+        manufacturingStatusUpdate();
     }
-
 
     @Subscribe(id = "startReadingBtn", subject = "clickListener")
     public void onStartReadingBtnClick(final ClickEvent<JmixButton> event) {
@@ -193,93 +183,6 @@ private void countItems() {
         stopReadingBtn.setEnabled(false);
     }
 
-    private final static String MAN_START_MESSAGE = "Manufacturing start";
-    private final static String MAN_PAUSE_SIGNAL = "Manufacturing pause";
-    private final static String MAN_RESUME_SIGNAL = "Manufacturing resume";
-    private final static String MAN_STOP_SIGNAL = "Manufacturing full stop";
-
-    private static String manufacturingProcessId;
-
-    @Subscribe(id = "manufacturingStartBtn", subject = "clickListener")
-    public void onManufacturingStartBtnClick(final ClickEvent<JmixButton> event) {
-        Map<String, Object> params = new HashMap<>();
-        Integer manufacturingCycle = appSettings.load(OrderProcessingSettings.class).getManufacturingCycle();
-        String timerValue = Iso8601Converter.convertSecondsToDuration(manufacturingCycle);
-        params.put("cycleTimer", timerValue);
-        ProcessInstance instanceManufacturing = runtimeService.startProcessInstanceByMessage(MAN_START_MESSAGE, params);
-        manufacturingProcessId = instanceManufacturing.getId();
-        manufacturingButtonsUpdate();
-        notifications.create("Manufacturing process started")
-                .withPosition(Notification.Position.TOP_END)
-                .withType(Notifications.Type.SUCCESS)
-                .withDuration(2000)
-                .show();
-    }
-
-    @Subscribe(id = "manufacturingPauseBtn", subject = "clickListener")
-    public void onManufacturingPauseBtnClick(final ClickEvent<JmixButton> event) {
-        runtimeService.signalEventReceived(MAN_PAUSE_SIGNAL);
-        manufacturingButtonsUpdate();
-        notifications.create("Manufacturing process suspended")
-                .withThemeVariant(NotificationVariant.LUMO_WARNING)
-                .withPosition(Notification.Position.TOP_END)
-                .withDuration(2000)
-                .show();
-    }
-
-    @Subscribe(id = "manufacturingResumeBtn", subject = "clickListener")
-    public void onManufacturingResumeBtnClick(final ClickEvent<JmixButton> event) {
-        runtimeService.signalEventReceived(MAN_RESUME_SIGNAL);
-        manufacturingButtonsUpdate();
-        notifications.create("Manufacturing process resumed")
-                .withType(Notifications.Type.SUCCESS)
-                .withPosition(Notification.Position.TOP_END)
-                .withDuration(2000)
-                .show();
-    }
-
-    @Subscribe(id = "manufacturingStopBtn", subject = "clickListener")
-    public void onManufacturingStopBtnClick(final ClickEvent<JmixButton> event) {
-        runtimeService.signalEventReceived(MAN_STOP_SIGNAL); //consider the process definitely stopped by signal
-        manufacturingProcessId = null;
-        manufacturingButtonsUpdate();
-        notifications.create("Manufacturing process stopped")
-                .withThemeVariant(NotificationVariant.LUMO_ERROR)
-                .withPosition(Notification.Position.TOP_END)
-                .withDuration(2000)
-                .show();
-    }
-
-    private void manufacturingButtonsUpdate() {
-        if (manufacturingProcessId == null) {
-            manufacturingStartBtn.setEnabled(true);
-            manufacturingPauseBtn.setEnabled(false);
-            manufacturingResumeBtn.setEnabled(false);
-            manufacturingStopBtn.setEnabled(false);
-        } else {
-            manufacturingStartBtn.setEnabled(false);
-            manufacturingStopBtn.setEnabled(true);
-            List<EventSubscription> subscriptions = runtimeService.createEventSubscriptionQuery()
-                    .processInstanceId(manufacturingProcessId)
-                    .list();
-            for (EventSubscription subscription : subscriptions) {
-                String eventName = subscription.getEventName();
-                if (MAN_PAUSE_SIGNAL.equals(eventName)) {
-                    manufacturingPauseBtn.setEnabled(true);
-                    manufacturingResumeBtn.setEnabled(false);
-                    break;
-                }
-                if (MAN_RESUME_SIGNAL.equals(eventName)) {
-                    manufacturingPauseBtn.setEnabled(false);
-                    manufacturingResumeBtn.setEnabled(true);
-                    break;
-                }
-
-            }
-        }
-    }
-
-
     @EventListener
     private void onIncomingOrder(IncomingOrderEvent event) {
         updateOrdersChart();
@@ -287,7 +190,7 @@ private void countItems() {
         notifications.create("Incoming order: " + order)
                 .withDuration(3000)
                 .withPosition(Notification.Position.TOP_END)
-                .withType(Notifications.Type.SUCCESS)
+                .withType(Notifications.Type.DEFAULT)
                 .show();
     }
     @EventListener
@@ -304,6 +207,7 @@ private void countItems() {
     @EventListener
     private void onItemsProducedEvent(ItemsProducedEvent event) {
         updateOrdersChart();
+        manufacturingStatusUpdate();
         Item item = event.getItem();
         notifications.create("Produced items: " + item.getName()
                         + ", now available: " + item.getAvailable())
@@ -313,8 +217,9 @@ private void countItems() {
     }
 
     @EventListener
-    private void onItemsSuspendedEvent(ItemsProducedEvent event) {
+    private void onItemsSuspendedEvent(ItemsSuspendedEvent event) {
         updateOrdersChart();
+        manufacturingStatusUpdate();
         Item item = event.getItem();
         notifications.create("Item production suspended: " + item.getName()
                         + ", now available: " + item.getAvailable())
@@ -348,7 +253,52 @@ private void countItems() {
         resetService.deleteAllOrders();
         resetService.initItems();
         resetService.initNumerators();
+        resetService.purgeQueues();
         updateItemsChart();
         updateOrdersChart();
+        log.info("🟥Application reset");
     }
+
+    private void initiateManufacturingBox() {
+        for (Item item : dataManager.load(Item.class).all().list()) {
+            Button button = uiComponents.create(Button.class);
+            button.setText(item.getName());
+            button.setId(item.getId().toString());
+            manufacturingStatusBox.add(button);
+        }
+    }
+
+    private void manufacturingStatusUpdate() {
+        Map<String, ManufacturingProcessStatus> statusMap = manufacturingService.getManufacturingProcessesStatus();
+        int count = manufacturingStatusBox.getComponentCount();
+
+        for (int i = 0; i < count; i++) {
+            Component component = manufacturingStatusBox.getComponentAt(i);
+            if (component instanceof Button button) {
+                ManufacturingProcessStatus status = statusMap.get(button.getText());
+                updateButton(button, status);
+                }
+            }
+        }
+
+    private void updateButton(Button button, ManufacturingProcessStatus status) {
+        button.getStyle().clear();
+        switch (status) {
+            case PRODUCTION -> { button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);}
+            case SUSPENDED -> { button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);}
+            case NOT_STARTED -> { button.addThemeVariants(ButtonVariant.LUMO_TERTIARY); }
+        }
+    }
+
+    @Subscribe(id = "startEngineBtn", subject = "clickListener")
+    public void onStartEngineBtnClick(final ClickEvent<JmixButton> event) {
+        flowableEngineManager.logProcessEngineStatus();
+        flowableEngineManager.startEngine();
+    }
+
+    @Subscribe(id = "stopEngineBtn", subject = "clickListener")
+    public void onStopEngineBtnClick(final ClickEvent<JmixButton> event) {
+        flowableEngineManager.stopEngine();
+    }
+
 }

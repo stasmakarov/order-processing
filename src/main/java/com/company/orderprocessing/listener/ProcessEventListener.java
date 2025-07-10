@@ -3,6 +3,7 @@ package com.company.orderprocessing.listener;
 import io.jmix.bpm.engine.events.ProcessCompletedEvent;
 import io.jmix.bpm.engine.events.ProcessStartedEvent;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,11 @@ public class ProcessEventListener {
     @EventListener
     public void onProcessStarted(final ProcessStartedEvent event) {
         ProcessDefinition processDefinition = event.getProcessDefinition();
+        ProcessInstance processInstance = event.getProcessInstance();
         String name = processDefinition.getName() == null ?
                 processDefinition.getId() : processDefinition.getName();
-        log.info("Process started: {}", name);
+        String businessKey = processInstance.getBusinessKey();
+        log.info("Process started: {}:{}", name, businessKey);
     }
 
     @EventListener

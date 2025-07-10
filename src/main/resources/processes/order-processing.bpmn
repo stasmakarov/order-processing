@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:flowable="http://flowable.org/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:jmix="http://jmix.io/schema/bpm/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.flowable.org/processdef" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd">
   <signal id="cancel-order" name="Cancel order" flowable:scope="processInstance" />
-  <message id="start-order-processing" name="Start order processing" />
-  <message id="order-delivered" name="Order delivered" />
   <collaboration id="Collaboration_1f6iuzo">
     <participant id="Participant_1xd6uca" name="Order processing" processRef="order-processing" />
     <participant id="Participant_1ixnpyt" name="RabbitMQ" />
     <participant id="Participant_0hr3zd4" name="Delivery process" />
     <messageFlow id="Flow_0vkjod4" sourceRef="Participant_1ixnpyt" targetRef="start-event-message" />
     <messageFlow id="Flow_0zysn1k" sourceRef="Participant_0hr3zd4" targetRef="messege-order-delivered" />
+    <messageFlow id="Flow_0xizhrq" sourceRef="Participant_0hr3zd4" targetRef="Event_13dk4k0" />
   </collaboration>
   <process id="order-processing" name="Order processing" isExecutable="true">
     <startEvent id="start-event-message" name="New order">
@@ -17,10 +16,9 @@
     </startEvent>
     <sequenceFlow id="Flow_1ya8f49" sourceRef="start-event-message" targetRef="task-create-order" />
     <sequenceFlow id="Flow_0rcrstn" sourceRef="call-activity-verification" targetRef="Activity_08flcj4" />
-    <sequenceFlow id="Flow_0qmvgtx" sourceRef="call-activity-reservation" targetRef="task-status-ready" />
     <sequenceFlow id="Flow_14daqvl" sourceRef="error-reservation" targetRef="Event_1s4djs2" />
     <sequenceFlow id="Flow_1ug3pyf" sourceRef="Event_1s4djs2" targetRef="end-event-reservation-failed" />
-    <sequenceFlow id="Flow_04blc2s" sourceRef="task-status-ready" targetRef="messege-order-delivered" />
+    <sequenceFlow id="Flow_04blc2s" sourceRef="task-status-ready" targetRef="Event_13dk4k0" />
     <sequenceFlow id="Flow_0dow0gv" sourceRef="messege-order-delivered" targetRef="Activity_confirm_delivery" />
     <sequenceFlow id="Flow_1h54wfk" sourceRef="task-status-completed" targetRef="end-event-success" />
     <sequenceFlow id="Flow_0ydx8oj" sourceRef="task-create-order" targetRef="script-def-var" />
@@ -57,9 +55,6 @@
         <timeDuration xsi:type="tFormalExpression">${timerNew}</timeDuration>
       </timerEventDefinition>
     </intermediateCatchEvent>
-    <endEvent id="end-event-address-failed">
-      <incoming>Flow_1m43vgv</incoming>
-    </endEvent>
     <intermediateThrowEvent id="signal-verification">
       <incoming>Flow_0qpatb2</incoming>
       <outgoing>Flow_1m43vgv</outgoing>
@@ -98,7 +93,7 @@
     </intermediateCatchEvent>
     <callActivity id="call-activity-reservation" name="Reservation &#38; payment" calledElement="reservation-and-payment" flowable:inheritBusinessKey="true" flowable:inheritVariables="true">
       <incoming>Flow_01v3qfl</incoming>
-      <outgoing>Flow_0qmvgtx</outgoing>
+      <outgoing>Flow_0b4aue0</outgoing>
     </callActivity>
     <intermediateThrowEvent id="Event_1s4djs2">
       <incoming>Flow_14daqvl</incoming>
@@ -112,43 +107,6 @@
       <outgoing>Flow_14daqvl</outgoing>
       <errorEventDefinition id="ErrorEventDefinition_100i93f" />
     </boundaryEvent>
-    <serviceTask id="task-status-ready" name="Status &#34;Ready&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,30)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
-      <extensionElements>
-        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
-          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
-          <jmix:methodParam name="status" type="com.company.orderprocessing.entity.OrderStatus" isVariable="false">30</jmix:methodParam>
-        </jmix:springBean>
-      </extensionElements>
-      <incoming>Flow_0qmvgtx</incoming>
-      <outgoing>Flow_04blc2s</outgoing>
-    </serviceTask>
-    <intermediateCatchEvent id="messege-order-delivered" name="Order delivered">
-      <incoming>Flow_04blc2s</incoming>
-      <outgoing>Flow_0dow0gv</outgoing>
-      <messageEventDefinition id="MessageEventDefinition_054oal0" messageRef="order-delivered" />
-    </intermediateCatchEvent>
-    <serviceTask id="Activity_confirm_delivery" name="Confirm delivery" flowable:expression="${ord_OrderService.confirmDelivery(order)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
-      <extensionElements>
-        <jmix:springBean beanName="ord_OrderService" methodName="confirmDelivery">
-          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
-        </jmix:springBean>
-      </extensionElements>
-      <incoming>Flow_0dow0gv</incoming>
-      <outgoing>Flow_0lqdxx6</outgoing>
-    </serviceTask>
-    <serviceTask id="task-status-completed" name="Status &#34;Completed&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,50)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
-      <extensionElements>
-        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
-          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
-          <jmix:methodParam name="status" type="com.company.orderprocessing.entity.OrderStatus" isVariable="false">50</jmix:methodParam>
-        </jmix:springBean>
-      </extensionElements>
-      <incoming>Flow_0lqdxx6</incoming>
-      <outgoing>Flow_1h54wfk</outgoing>
-    </serviceTask>
-    <endEvent id="end-event-success">
-      <incoming>Flow_1h54wfk</incoming>
-    </endEvent>
     <subProcess id="event-subprocess-canceling" name="Order canceling" triggeredByEvent="true">
       <sequenceFlow id="Flow_0rm7w6l" sourceRef="start-event-signal" targetRef="task-status-cancelled" />
       <sequenceFlow id="Flow_1jrp4cg" sourceRef="task-status-cancelled" targetRef="script-notify-customer" />
@@ -177,11 +135,73 @@ println "Order ${order.number} cancelled"</script>
         <outgoing>Flow_1jrp4cg</outgoing>
       </serviceTask>
     </subProcess>
+    <serviceTask id="task-status-ready" name="Status &#34;Ready&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,30)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
+          <jmix:methodParam name="status" type="com.company.orderprocessing.entity.OrderStatus" isVariable="false">30</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0b4aue0</incoming>
+      <outgoing>Flow_04blc2s</outgoing>
+    </serviceTask>
+    <sequenceFlow id="Flow_0b4aue0" sourceRef="call-activity-reservation" targetRef="task-status-ready" />
+    <intermediateCatchEvent id="Event_13dk4k0" name="In delivery">
+      <incoming>Flow_04blc2s</incoming>
+      <outgoing>Flow_0fuhso8</outgoing>
+      <messageEventDefinition id="MessageEventDefinition_0yrd4px" messageRef="order-in-delivery" />
+    </intermediateCatchEvent>
+    <sequenceFlow id="Flow_0fuhso8" sourceRef="Event_13dk4k0" targetRef="Activity_137o6le" />
+    <sequenceFlow id="Flow_0rat2t5" sourceRef="Activity_137o6le" targetRef="messege-order-delivered" />
+    <serviceTask id="Activity_137o6le" name="Status&#10;&#34;In delivery&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,40)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
+          <jmix:methodParam name="statusId" type="int" isVariable="false">40</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0fuhso8</incoming>
+      <outgoing>Flow_0rat2t5</outgoing>
+    </serviceTask>
+    <serviceTask id="Activity_confirm_delivery" name="Confirm delivery" flowable:expression="${ord_OrderService.confirmDelivery(order)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="confirmDelivery">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0dow0gv</incoming>
+      <outgoing>Flow_0lqdxx6</outgoing>
+    </serviceTask>
+    <serviceTask id="task-status-completed" name="Status &#34;Completed&#34;" flowable:expression="${ord_OrderService.setOrderStatus(order,50)}" jmix:taskType="springBean" jmix:beanName="ord_OrderService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_OrderService" methodName="setOrderStatus">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">order</jmix:methodParam>
+          <jmix:methodParam name="status" type="com.company.orderprocessing.entity.OrderStatus" isVariable="false">50</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0lqdxx6</incoming>
+      <outgoing>Flow_1h54wfk</outgoing>
+    </serviceTask>
+    <endEvent id="end-event-success">
+      <incoming>Flow_1h54wfk</incoming>
+    </endEvent>
+    <intermediateCatchEvent id="messege-order-delivered" name="Order delivered">
+      <incoming>Flow_0rat2t5</incoming>
+      <outgoing>Flow_0dow0gv</outgoing>
+      <messageEventDefinition id="MessageEventDefinition_054oal0" messageRef="order-delivered" />
+    </intermediateCatchEvent>
+    <endEvent id="end-event-address-failed">
+      <incoming>Flow_1m43vgv</incoming>
+    </endEvent>
   </process>
+  <message id="start-order-processing" name="Start order processing" />
+  <message id="order-delivered" name="Order delivered" />
+  <message id="order-ready" name="Order ready" />
+  <message id="order-in-delivery" name="Order in delivery" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
     <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="Collaboration_1f6iuzo">
       <bpmndi:BPMNShape id="Participant_1xd6uca_di" bpmnElement="Participant_1xd6uca" isHorizontal="true">
-        <omgdc:Bounds x="250" y="70" width="1488" height="430" />
+        <omgdc:Bounds x="250" y="70" width="1688" height="430" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0g09yp0_di" bpmnElement="start-event-message">
@@ -200,9 +220,6 @@ println "Order ${order.number} cancelled"</script>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0yoafbr_di" bpmnElement="timer-new">
         <omgdc:Bounds x="632" y="150" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1f09ros_di" bpmnElement="end-event-address-failed">
-        <omgdc:Bounds x="762" y="352" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_08651pz_di" bpmnElement="signal-verification">
         <omgdc:Bounds x="762" y="272" width="36" height="36" />
@@ -228,57 +245,69 @@ println "Order ${order.number} cancelled"</script>
       <bpmndi:BPMNShape id="Event_02cgv2a_di" bpmnElement="end-event-reservation-failed">
         <omgdc:Bounds x="1092" y="352" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1f09ros_di" bpmnElement="end-event-address-failed">
+        <omgdc:Bounds x="762" y="352" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1d2iq59_di" bpmnElement="event-subprocess-canceling" isExpanded="true">
+        <omgdc:Bounds x="1370" y="290" width="458" height="160" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ihdnpc_di" bpmnElement="script-notify-customer">
+        <omgdc:Bounds x="1620" y="330" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_11tgg72_di" bpmnElement="end-event-cancelled">
+        <omgdc:Bounds x="1762" y="352" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_122t6sk_di" bpmnElement="start-event-signal">
+        <omgdc:Bounds x="1402" y="352" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0k1gv1g_di" bpmnElement="task-status-cancelled">
+        <omgdc:Bounds x="1480" y="330" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0rm7w6l_di" bpmnElement="Flow_0rm7w6l">
+        <di:waypoint x="1438" y="370" />
+        <di:waypoint x="1480" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1jrp4cg_di" bpmnElement="Flow_1jrp4cg">
+        <di:waypoint x="1580" y="370" />
+        <di:waypoint x="1620" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1kupuya_di" bpmnElement="Flow_1kupuya">
+        <di:waypoint x="1720" y="370" />
+        <di:waypoint x="1762" y="370" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Activity_0eqxgab_di" bpmnElement="task-status-ready">
         <omgdc:Bounds x="1170" y="128" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0zi4tc7_di" bpmnElement="messege-order-delivered">
-        <omgdc:Bounds x="1312" y="150" width="36" height="36" />
+      <bpmndi:BPMNShape id="Event_16dx9eo_di" bpmnElement="Event_13dk4k0">
+        <omgdc:Bounds x="1302" y="150" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="1292" y="193" width="76" height="14" />
+          <omgdc:Bounds x="1295" y="193" width="51" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1cp1mai_di" bpmnElement="Activity_137o6le">
+        <omgdc:Bounds x="1380" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1b3ajxf_di" bpmnElement="Activity_confirm_delivery">
-        <omgdc:Bounds x="1390" y="128" width="100" height="80" />
+        <omgdc:Bounds x="1590" y="128" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_08mf3jq_di" bpmnElement="task-status-completed">
-        <omgdc:Bounds x="1528" y="128" width="100" height="80" />
+        <omgdc:Bounds x="1728" y="128" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1rg9i65_di" bpmnElement="end-event-success">
-        <omgdc:Bounds x="1660" y="150" width="36" height="36" />
+        <omgdc:Bounds x="1860" y="150" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1d2iq59_di" bpmnElement="event-subprocess-canceling" isExpanded="true">
-        <omgdc:Bounds x="1170" y="290" width="458" height="160" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Event_0zi4tc7_di" bpmnElement="messege-order-delivered">
+        <omgdc:Bounds x="1512" y="150" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds x="1492" y="193" width="76" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0ihdnpc_di" bpmnElement="script-notify-customer">
-        <omgdc:Bounds x="1420" y="330" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_11tgg72_di" bpmnElement="end-event-cancelled">
-        <omgdc:Bounds x="1562" y="352" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_122t6sk_di" bpmnElement="start-event-signal">
-        <omgdc:Bounds x="1202" y="352" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0k1gv1g_di" bpmnElement="task-status-cancelled">
-        <omgdc:Bounds x="1275" y="330" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_0rm7w6l_di" bpmnElement="Flow_0rm7w6l">
-        <di:waypoint x="1238" y="370" />
-        <di:waypoint x="1275" y="370" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1jrp4cg_di" bpmnElement="Flow_1jrp4cg">
-        <di:waypoint x="1375" y="370" />
-        <di:waypoint x="1420" y="370" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1kupuya_di" bpmnElement="Flow_1kupuya">
-        <di:waypoint x="1520" y="370" />
-        <di:waypoint x="1562" y="370" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Event_10mmxso_di" bpmnElement="error-reservation">
         <omgdc:Bounds x="1092" y="190" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -293,10 +322,6 @@ println "Order ${order.number} cancelled"</script>
         <di:waypoint x="800" y="168" />
         <di:waypoint x="830" y="168" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0qmvgtx_di" bpmnElement="Flow_0qmvgtx">
-        <di:waypoint x="1130" y="168" />
-        <di:waypoint x="1170" y="168" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_14daqvl_di" bpmnElement="Flow_14daqvl">
         <di:waypoint x="1110" y="226" />
         <di:waypoint x="1110" y="272" />
@@ -307,15 +332,15 @@ println "Order ${order.number} cancelled"</script>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_04blc2s_di" bpmnElement="Flow_04blc2s">
         <di:waypoint x="1270" y="168" />
-        <di:waypoint x="1312" y="168" />
+        <di:waypoint x="1302" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0dow0gv_di" bpmnElement="Flow_0dow0gv">
-        <di:waypoint x="1348" y="168" />
-        <di:waypoint x="1390" y="168" />
+        <di:waypoint x="1548" y="168" />
+        <di:waypoint x="1590" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1h54wfk_di" bpmnElement="Flow_1h54wfk">
-        <di:waypoint x="1628" y="168" />
-        <di:waypoint x="1660" y="168" />
+        <di:waypoint x="1828" y="168" />
+        <di:waypoint x="1860" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0ydx8oj_di" bpmnElement="Flow_0ydx8oj">
         <di:waypoint x="470" y="168" />
@@ -342,19 +367,31 @@ println "Order ${order.number} cancelled"</script>
         <di:waypoint x="962" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0lqdxx6_di" bpmnElement="Flow_0lqdxx6">
-        <di:waypoint x="1490" y="168" />
-        <di:waypoint x="1528" y="168" />
+        <di:waypoint x="1690" y="168" />
+        <di:waypoint x="1728" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_188h34k_di" bpmnElement="Flow_188h34k">
         <di:waypoint x="668" y="168" />
         <di:waypoint x="700" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0b4aue0_di" bpmnElement="Flow_0b4aue0">
+        <di:waypoint x="1130" y="168" />
+        <di:waypoint x="1170" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fuhso8_di" bpmnElement="Flow_0fuhso8">
+        <di:waypoint x="1338" y="168" />
+        <di:waypoint x="1380" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0rat2t5_di" bpmnElement="Flow_0rat2t5">
+        <di:waypoint x="1480" y="168" />
+        <di:waypoint x="1512" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_1ksvhag_di" bpmnElement="Participant_1ixnpyt" isHorizontal="true">
         <omgdc:Bounds x="250" y="-50" width="300" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_0qqudah_di" bpmnElement="Participant_0hr3zd4" isHorizontal="true">
-        <omgdc:Bounds x="1160" y="-50" width="358" height="60" />
+        <omgdc:Bounds x="1150" y="-50" width="568" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0vkjod4_di" bpmnElement="Flow_0vkjod4">
@@ -362,8 +399,12 @@ println "Order ${order.number} cancelled"</script>
         <di:waypoint x="320" y="150" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0zysn1k_di" bpmnElement="Flow_0zysn1k">
-        <di:waypoint x="1330" y="10" />
-        <di:waypoint x="1330" y="150" />
+        <di:waypoint x="1530" y="10" />
+        <di:waypoint x="1530" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xizhrq_di" bpmnElement="Flow_0xizhrq">
+        <di:waypoint x="1320" y="10" />
+        <di:waypoint x="1320" y="150" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

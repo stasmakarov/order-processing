@@ -25,5 +25,4 @@ public class AddressVerificator {
             log.error("Order # {}: Address is NULL", order.getNumber());
         }
     }
-
 }

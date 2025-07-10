@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -24,7 +25,7 @@ import static java.time.LocalDateTime.now;
 public class DeliveryService {
     private static final Logger log = LoggerFactory.getLogger(DeliveryService.class);
     private  static final Random random = new Random();
-    private static final String MESSAGE_NAME = "Order delivered";
+    private static final String START_DELIVERY = "Start delivery";
 
     @Autowired
     private RuntimeService runtimeService;
@@ -35,12 +36,9 @@ public class DeliveryService {
     @Autowired
     private SystemAuthenticator systemAuthenticator;
     @Autowired
-    private UiEventPublisher uiEventPublisher;
-    @Autowired
-    private DeliveryRepository deliveryRepository;
-    @Autowired
     private AppSettings appSettings;
 
+    @Transactional
     public List<Order> getOrdersWaitingDelivery() {
         systemAuthenticator.begin("admin");
         try {
@@ -49,12 +47,16 @@ public class DeliveryService {
                     .parameter("status", OrderStatus.READY)
                     .list();
             log.info("Getting orders for delivery");
-            return orders;
+            return orders != null ? orders : Collections.emptyList();
+        } catch (Exception e) {
+            log.error("Error while retrieving orders for delivery", e);
+            return Collections.emptyList();
         } finally {
             systemAuthenticator.end();
         }
     }
 
+    @Transactional
     public String createDelivery(List<Order> orders) {
         systemAuthenticator.begin("admin");
         try {
@@ -63,11 +65,6 @@ public class DeliveryService {
             delivery.setNumber("DEL-" + numeratorService.getNext("delivery").toString());
             delivery.setTimestamp(now());
             saveContext.saving(delivery);
-            for (Order order : orders) {
-                order.setDelivery(delivery);
-                order.setStatus(OrderStatus.IN_DELIVERY);
-                saveContext.saving(order);
-            }
             dataManager.save(saveContext);
             return delivery.getNumber();
         } finally {
@@ -77,12 +74,12 @@ public class DeliveryService {
 
     public void startDeliveryProcess() {
         Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
-        int randomValue = random.nextInt(1, maxDelayTimer);
+        int randomValue = random.nextInt(10, maxDelayTimer);
         Map<String, Object> params = new HashMap<>();
         params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
-        runtimeService.startProcessInstanceByMessage(MESSAGE_NAME, params);
+        runtimeService.startProcessInstanceByMessage(START_DELIVERY, params);
+        log.info("Delivery process started");
     }
-
 
     public void setBusinessKey(String deliveryNumber, DelegateExecution execution) {
         String processInstanceId = execution.getProcessInstanceId();
@@ -95,9 +92,17 @@ public class DeliveryService {
     }
 
     public void performDelivery(String deliveryNumber) {
+        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
+        int delay = random.nextInt(10, maxDelayTimer);
+        try {
+            Thread.sleep(1000L * delay);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         System.out.println("Delivery has completed: " + deliveryNumber);
     }
 
+    @Transactional
     private Delivery getDeliveryByNumber(String deliveryNumber) {
         systemAuthenticator.begin("admin");
         try {
@@ -113,28 +118,31 @@ public class DeliveryService {
         return null;
     }
 
-
-    public void sendMessageOrderDelivered(Order order) {
+    public void sendMessage(Order order, String messageName) {
         String processInstanceId = order.getProcessInstanceId();
         systemAuthenticator.begin("admin");
         try {
             if (processInstanceId != null) {
-                List<EventSubscription> subscriptions = runtimeService.createEventSubscriptionQuery()
-                        .processInstanceId(processInstanceId)
-    //                    .eventName(MESSAGE_NAME)
-                        .list();
+                EventSubscription subscription = null;
+                try {
+                    subscription = runtimeService.createEventSubscriptionQuery()
+                            .processInstanceId(processInstanceId)
+                            .eventName(messageName)
+                            .singleResult();
+                } catch (Exception e) {
+                    log.info("Error fetching subscription for message {},  {}", messageName, order.getNumber());
+                    return;
+                }
 
-                for (EventSubscription subscription : subscriptions) {
-                    if (processInstanceId.equals(subscription.getProcessInstanceId())
-                            && MESSAGE_NAME.equals(subscription.getEventName())) {
-                        String executionId = subscription.getExecutionId();
-                        if (executionId != null) {
-                            runtimeService.messageEventReceived(MESSAGE_NAME, executionId);
-                        } else {
-                            log.error("Subscription ID: {} - Execution ID is NULL, message can not be send",
-                                    subscription.getId());
-                        }
-                    }
+                if (subscription == null) return;
+                String executionId = subscription.getExecutionId();
+                log.info("Message sent: {} to {}", messageName, order.getNumber());
+
+                if (executionId != null) {
+                    runtimeService.messageEventReceived(messageName, executionId);
+                } else {
+                    log.error("Subscription ID: {} - Execution ID is NULL, message can not be send",
+                            subscription.getId());
                 }
             }
         } finally {

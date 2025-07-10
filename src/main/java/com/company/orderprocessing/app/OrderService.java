@@ -21,8 +21,11 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @Component(value = "ord_OrderService")
 public class OrderService {
@@ -30,6 +33,8 @@ public class OrderService {
 
 
     private final static String START_MESSAGE_NAME = "Start order processing";
+    private final static String RESERVATION_ERROR_CODE = "901";
+    private final static String VERIFICATION_ERROR_CPDE = "100";
     private final Random random = new Random();
 
     @Autowired
@@ -38,8 +43,6 @@ public class OrderService {
     private DataManager dataManager;
     @Autowired
     private NumeratorService numeratorService;
-    @Autowired
-    private InventoryService inventoryService;
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
@@ -79,7 +82,6 @@ public class OrderService {
             runtimeService.startProcessInstanceByMessage(START_MESSAGE_NAME,
                     businessKey,
                     map);
-            log.info("Order process started");
             uiEventPublisher.publishEvent(new IncomingOrderEvent(this, json));
         } catch (Exception e) {
             //noinspection JmixRuntimeException
@@ -120,21 +122,13 @@ public class OrderService {
     }
 
     public boolean simulatePayment(Order order) {
-        MDC.put("Order #", order.getNumber());
         if (randomError()) {
-            log.error("Payment failed");
+            log.error("❌Payment failed for order: {}", order.getNumber());
             return false;
         }
-        log.info("Payment proceeded");
+        log.info("✅Payment success for order: {}", order.getNumber());
         return true;
     }
-
-    public boolean simulateCancelPayment(Order order) {
-        MDC.put("Order #", order.getNumber());
-        log.info("Payment cancelled");
-        return true;
-    }
-
 
     private boolean randomError() {
         int randomValue = random.nextInt(1,100);
@@ -160,7 +154,6 @@ public class OrderService {
             order.setNumber(orderNumber);
             order.setStatus(OrderStatus.NEW);
             dataManager.save(order);
-            MDC.put("Order #", order.getNumber());
             log.info("Order created: {}", order.getNumber());
             return order;
         } catch (IllegalArgumentException ignored) {
@@ -170,32 +163,60 @@ public class OrderService {
         return null;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void setOrderStatus(Order order, int statusId) {
         OrderStatus status = OrderStatus.fromId(statusId);
         systemAuthenticator.begin("admin");
         try {
-            order.setStatus(status);
-            dataManager.save(order);
+            Order freshOrder = dataManager.load(Order.class)
+                    .id(order.getId())
+                    .one();
+            freshOrder.setStatus(status);
+            dataManager.save(freshOrder);
             log.info("Order #: {}, Status set: {}", order.getNumber(), status);
         } finally {
             systemAuthenticator.end();
         }
     }
 
-    public void doReservation(Order order) {
-        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.RESERVATION);
-
-        log.info("Try reservation for order {}", order.getNumber());
+    public boolean doReservation(Order order) {
+        try {
+            Boolean response = inventoryMessageProducer.sendInventoryMessage(order.getItem(),
+                    order.getQuantity(),
+                    ItemOperation.RESERVATION).get();
+            if (response == null || !response) {
+                log.info("❌Reservation failed for order {}", order.getNumber());
+                throw new BpmnError(RESERVATION_ERROR_CODE);
+            }
+            log.info("✅Reservation for order {}", order.getNumber());
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void cancelReservation(Order order) {
-        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.CANCEL_RESERVATION);
-        log.info("✅Cancelled reservation for order {}", order.getNumber());
+        try {
+            inventoryMessageProducer.sendInventoryMessage(order.getItem(),
+                    order.getQuantity(),
+                    ItemOperation.CANCEL_RESERVATION
+            ).get();
+            log.info("✅Cancelled reservation for order {}", order.getNumber());
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void confirmDelivery(Order order) {
-        inventoryMessageProducer.sendInventoryMessage(order.getItem(), order.getQuantity(), ItemOperation.DELIVERY);
-        log.info("✅Delivery completed for order {}", order.getNumber());
+        try {
+            inventoryMessageProducer.sendInventoryMessage(order.getItem(),
+                    order.getQuantity(),
+                    ItemOperation.DELIVERY
+            ).get();
+            log.info("✅Delivery completed for order {}", order.getNumber());
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void addressVerification(Order order) {
@@ -212,7 +233,7 @@ public class OrderService {
                 systemAuthenticator.end();
             }
         } else {
-            throw new BpmnError("100");
+            throw new BpmnError(VERIFICATION_ERROR_CPDE);
         }
     }
 

@@ -7,6 +7,7 @@
     <participant id="Participant_0zazzhg" name="Order processing" />
     <messageFlow id="Flow_0uqx503" sourceRef="Participant_13v3ppr" targetRef="Event_1lupvge" />
     <messageFlow id="Flow_00s4c1i" sourceRef="Activity_00pks50" targetRef="Participant_0zazzhg" />
+    <messageFlow id="Flow_00bry14" sourceRef="Activity_15rm5jf" targetRef="Participant_0zazzhg" />
   </collaboration>
   <process id="delivery-process" name="Delivery process" isExecutable="true">
     <startEvent id="Event_1lupvge">
@@ -29,7 +30,7 @@
     <startEvent id="startEvent1">
       <outgoing>Flow_1ohq3pn</outgoing>
     </startEvent>
-    <serviceTask id="Activity_1aada8n" name="Create delivery" flowable:async="true" flowable:expression="${ord_DeliveryService.createDelivery(orders)}" flowable:resultVariable="deliveryNumber" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <serviceTask id="Activity_1aada8n" name="Create delivery" flowable:expression="${ord_DeliveryService.createDelivery(orders)}" flowable:resultVariable="deliveryNumber" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="createDelivery">
           <jmix:methodParam name="orders" type="java.util.List&#60;com.company.orderprocessing.entity.Order&#62;" isVariable="true">orders</jmix:methodParam>
@@ -38,17 +39,7 @@
       <incoming>Flow_0kwom7c</incoming>
       <outgoing>Flow_0vg8lda</outgoing>
     </serviceTask>
-    <serviceTask id="Activity_1oxzksy" name="Set business key" flowable:async="true" flowable:expression="${ord_DeliveryService.setBusinessKey(deliveryNumber,execution)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
-      <extensionElements>
-        <jmix:springBean beanName="ord_DeliveryService" methodName="setBusinessKey">
-          <jmix:methodParam name="delivery" type="com.company.orderprocessing.entity.Delivery" isVariable="true">deliveryNumber</jmix:methodParam>
-          <jmix:methodParam name="execution" type="org.flowable.engine.delegate.DelegateExecution" isVariable="true">execution</jmix:methodParam>
-        </jmix:springBean>
-      </extensionElements>
-      <incoming>Flow_0vg8lda</incoming>
-      <outgoing>Flow_1jl7bae</outgoing>
-    </serviceTask>
-    <serviceTask id="Activity_0170qcc" name="Get orders waiting delivery" flowable:async="true" flowable:expression="${ord_DeliveryService.getOrdersWaitingDelivery()}" flowable:resultVariable="orders" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <serviceTask id="Activity_0170qcc" name="Get orders waiting delivery" flowable:expression="${ord_DeliveryService.getOrdersWaitingDelivery()}" flowable:resultVariable="orders" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="getOrdersWaitingDelivery" />
       </extensionElements>
@@ -69,11 +60,34 @@
     <sequenceFlow id="Flow_0s90v3s" sourceRef="Activity_12b4y2n" targetRef="Activity_00pks50" />
     <sequenceFlow id="Flow_13goami" sourceRef="Activity_00pks50" targetRef="Event_1v5wbck" />
     <sequenceFlow id="Flow_0vg8lda" sourceRef="Activity_1aada8n" targetRef="Activity_1oxzksy" />
-    <sequenceFlow id="Flow_1jl7bae" sourceRef="Activity_1oxzksy" targetRef="deliveri-timer" />
-    <serviceTask id="Activity_00pks50" name="Send delivery message" flowable:async="true" flowable:expression="${ord_DeliveryService.sendMessage(orders_item)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <sequenceFlow id="Flow_1jl7bae" sourceRef="Activity_1oxzksy" targetRef="Activity_15rm5jf" />
+    <sequenceFlow id="Flow_0unfzh4" sourceRef="Activity_15rm5jf" targetRef="Activity_12b4y2n" />
+    <serviceTask id="Activity_15rm5jf" name="Send message &#34;In delivery&#34;" flowable:expression="${ord_DeliveryService.sendMessage(orders_item,&#39;Order in delivery&#39;)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="sendMessage">
           <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">orders_item</jmix:methodParam>
+          <jmix:methodParam name="messageName" type="java.lang.String" isVariable="false">Order in delivery</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_1jl7bae</incoming>
+      <outgoing>Flow_0unfzh4</outgoing>
+      <multiInstanceLoopCharacteristics isSequential="true" flowable:collection="orders" flowable:elementVariable="orders_item" jmix:collectionSource="processVariable" jmix:collectionValue="orders" />
+    </serviceTask>
+    <serviceTask id="Activity_1oxzksy" name="Set delivery business key" flowable:expression="${ord_DeliveryService.setBusinessKey(deliveryNumber,execution)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_DeliveryService" methodName="setBusinessKey">
+          <jmix:methodParam name="delivery" type="com.company.orderprocessing.entity.Delivery" isVariable="true">deliveryNumber</jmix:methodParam>
+          <jmix:methodParam name="execution" type="org.flowable.engine.delegate.DelegateExecution" isVariable="true">execution</jmix:methodParam>
+        </jmix:springBean>
+      </extensionElements>
+      <incoming>Flow_0vg8lda</incoming>
+      <outgoing>Flow_1jl7bae</outgoing>
+    </serviceTask>
+    <serviceTask id="Activity_00pks50" name="Send message &#34;Delivered&#34;" flowable:expression="${ord_DeliveryService.sendMessage(orders_item,&#39;Order delivered&#39;)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+      <extensionElements>
+        <jmix:springBean beanName="ord_DeliveryService" methodName="sendMessage">
+          <jmix:methodParam name="order" type="com.company.orderprocessing.entity.Order" isVariable="true">orders_item</jmix:methodParam>
+          <jmix:methodParam name="messageName" type="java.lang.String" isVariable="false">Order delivered</jmix:methodParam>
         </jmix:springBean>
       </extensionElements>
       <incoming>Flow_0s90v3s</incoming>
@@ -83,23 +97,15 @@
     <endEvent id="Event_1v5wbck">
       <incoming>Flow_13goami</incoming>
     </endEvent>
-    <serviceTask id="Activity_12b4y2n" name="Perform delivery" flowable:async="true" flowable:expression="${ord_DeliveryService.performDelivery(deliveryNumber)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
+    <serviceTask id="Activity_12b4y2n" name="Perform delivery" flowable:expression="${ord_DeliveryService.performDelivery(deliveryNumber)}" jmix:taskType="springBean" jmix:beanName="ord_DeliveryService">
       <extensionElements>
         <jmix:springBean beanName="ord_DeliveryService" methodName="performDelivery">
           <jmix:methodParam name="delivery" type="com.company.orderprocessing.entity.Delivery" isVariable="true">deliveryNumber</jmix:methodParam>
         </jmix:springBean>
       </extensionElements>
-      <incoming>Flow_08qut9k</incoming>
+      <incoming>Flow_0unfzh4</incoming>
       <outgoing>Flow_0s90v3s</outgoing>
     </serviceTask>
-    <sequenceFlow id="Flow_08qut9k" sourceRef="deliveri-timer" targetRef="Activity_12b4y2n" />
-    <intermediateCatchEvent id="deliveri-timer">
-      <incoming>Flow_1jl7bae</incoming>
-      <outgoing>Flow_08qut9k</outgoing>
-      <timerEventDefinition id="TimerEventDefinition_01g9v7c">
-        <timeDuration xsi:type="tFormalExpression">${deliveryTimer}</timeDuration>
-      </timerEventDefinition>
-    </intermediateCatchEvent>
     <textAnnotation id="TextAnnotation_0zoqv6h">
       <text>Start by Quartz</text>
     </textAnnotation>
@@ -108,7 +114,7 @@
   <bpmndi:BPMNDiagram id="BPMNDiagram_process">
     <bpmndi:BPMNPlane id="BPMNPlane_process" bpmnElement="Collaboration_0g1rg9y">
       <bpmndi:BPMNShape id="Participant_0jzequf_di" bpmnElement="Participant_0jzequf" isHorizontal="true">
-        <omgdc:Bounds x="99" y="70" width="1170" height="329" />
+        <omgdc:Bounds x="99" y="80" width="1271" height="319" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_003656t_di" bpmnElement="Event_1lupvge">
@@ -130,26 +136,28 @@
         <omgdc:Bounds x="560" y="210" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_16aclkp_di" bpmnElement="Activity_1oxzksy">
-        <omgdc:Bounds x="700" y="210" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1y58hig_di" bpmnElement="Activity_0170qcc">
         <omgdc:Bounds x="320" y="210" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_09cec5v_di" bpmnElement="Activity_15rm5jf">
+        <omgdc:Bounds x="840" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_16aclkp_di" bpmnElement="Activity_1oxzksy">
+        <omgdc:Bounds x="700" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0a70lxa_di" bpmnElement="Activity_00pks50">
-        <omgdc:Bounds x="1060" y="210" width="100" height="80" />
+        <omgdc:Bounds x="1140" y="210" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1v5wbck_di" bpmnElement="Event_1v5wbck">
-        <omgdc:Bounds x="1212" y="232" width="36" height="36" />
+        <omgdc:Bounds x="1292" y="232" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_19lgdbp_di" bpmnElement="Activity_12b4y2n">
-        <omgdc:Bounds x="910" y="210" width="100" height="80" />
+        <omgdc:Bounds x="990" y="210" width="100" height="80" />
         <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_09n8t6f_di" bpmnElement="deliveri-timer">
-        <omgdc:Bounds x="832" y="232" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="TextAnnotation_0zoqv6h_di" bpmnElement="TextAnnotation_0zoqv6h">
         <omgdc:Bounds x="190" y="100" width="140" height="26" />
@@ -186,12 +194,12 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0s90v3s_di" bpmnElement="Flow_0s90v3s">
-        <omgdi:waypoint x="1010" y="250" />
-        <omgdi:waypoint x="1060" y="250" />
+        <omgdi:waypoint x="1090" y="250" />
+        <omgdi:waypoint x="1140" y="250" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_13goami_di" bpmnElement="Flow_13goami">
-        <omgdi:waypoint x="1160" y="250" />
-        <omgdi:waypoint x="1212" y="250" />
+        <omgdi:waypoint x="1240" y="250" />
+        <omgdi:waypoint x="1292" y="250" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0vg8lda_di" bpmnElement="Flow_0vg8lda">
         <omgdi:waypoint x="660" y="250" />
@@ -199,11 +207,11 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1jl7bae_di" bpmnElement="Flow_1jl7bae">
         <omgdi:waypoint x="800" y="250" />
-        <omgdi:waypoint x="832" y="250" />
+        <omgdi:waypoint x="840" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_08qut9k_di" bpmnElement="Flow_08qut9k">
-        <omgdi:waypoint x="868" y="250" />
-        <omgdi:waypoint x="910" y="250" />
+      <bpmndi:BPMNEdge id="Flow_0unfzh4_di" bpmnElement="Flow_0unfzh4">
+        <omgdi:waypoint x="940" y="250" />
+        <omgdi:waypoint x="990" y="250" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Association_14ekqzg_di" bpmnElement="Association_14ekqzg">
         <omgdi:waypoint x="183" y="158" />
@@ -214,7 +222,7 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_1n0rcrg_di" bpmnElement="Participant_0zazzhg" isHorizontal="true">
-        <omgdc:Bounds x="960" y="470" width="309" height="60" />
+        <omgdc:Bounds x="730" y="470" width="640" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0uqx503_di" bpmnElement="Flow_0uqx503">
@@ -222,8 +230,12 @@
         <omgdi:waypoint x="168" y="348" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_00s4c1i_di" bpmnElement="Flow_00s4c1i">
-        <omgdi:waypoint x="1110" y="290" />
-        <omgdi:waypoint x="1110" y="470" />
+        <omgdi:waypoint x="1190" y="290" />
+        <omgdi:waypoint x="1190" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00bry14_di" bpmnElement="Flow_00bry14">
+        <omgdi:waypoint x="890" y="290" />
+        <omgdi:waypoint x="890" y="470" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

@@ -16,7 +16,7 @@ public class OrderMessageHandler {
     @Autowired
     private OrderService orderService;
 
-    @RabbitListener(id = "orderMessageListener", queues = "#{@orderQueueName}", autoStartup = "false")
+    @RabbitListener(id = "orderMessageListener", queues = "#{@orderQueue}", autoStartup = "false")
     public void handleMessage(Message message) {
             try {
                 String json = new String(message.getBody());

@@ -59,7 +59,7 @@
       <extensionElements>
         <jmix:conditionDetails conditionSource="expression" />
       </extensionElements>
-      <conditionExpression xsi:type="tFormalExpression">${reservationResult &amp;&amp; paymentResult}</conditionExpression>
+      <conditionExpression xsi:type="tFormalExpression">${paymentResult}</conditionExpression>
     </sequenceFlow>
     <sequenceFlow id="Flow_1mjfaxt" name="Rollback" sourceRef="Gateway_1b88i7m" targetRef="Event_compensation">
       <extensionElements>
@@ -124,16 +124,11 @@
       <bpmndi:BPMNShape id="Event_14rkjej_di" bpmnElement="Event_1jn2r1m">
         <omgdc:Bounds x="702" y="32" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
-        <omgdi:waypoint x="290" y="226" />
-        <omgdi:waypoint x="290" y="290" />
-        <omgdi:waypoint x="320" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Event_1mdfqsa_di" bpmnElement="Event_0upnfb9">
-        <omgdc:Bounds x="272" y="110" width="36" height="36" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_17iyxyg_di" bpmnElement="Event_compensate_reservation">
         <omgdc:Bounds x="272" y="190" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1mdfqsa_di" bpmnElement="Event_0upnfb9">
+        <omgdc:Bounds x="272" y="110" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1c0d9vx_di" bpmnElement="Flow_1c0d9vx">
         <omgdi:waypoint x="158" y="168" />
@@ -169,6 +164,11 @@
         <omgdi:waypoint x="290" y="110" />
         <omgdi:waypoint x="290" y="50" />
         <omgdi:waypoint x="702" y="50" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_085nn0o_di" bpmnElement="Association_085nn0o">
+        <omgdi:waypoint x="290" y="226" />
+        <omgdi:waypoint x="290" y="290" />
+        <omgdi:waypoint x="320" y="290" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
