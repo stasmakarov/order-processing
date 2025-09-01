@@ -11,6 +11,7 @@ import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.engine.RuntimeService;
+import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.eventsubscription.api.EventSubscription;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class ManufacturingService {
     private SystemAuthenticator systemAuthenticator;
 
     private final static String MAN_START_MESSAGE = "Manufacturing start";
-    private final static String MAN_SUSPEND_MESSAGE = "Manufacturing pause";
+    private final static String MAN_SUSPEND_MESSAGE = "Manufacturing suspend";
     private final static String MAN_RESUME_MESSAGE = "Manufacturing resume";
     private final static String MAN_STOP_SIGNAL = "Manufacturing full stop";
 
@@ -49,6 +50,7 @@ public class ManufacturingService {
         Integer maxItemsParty = appSettings.load(OrderProcessingSettings.class).getMaxItemsParty();
         int producedQty = random.nextInt(maxItemsParty);
         inventoryService.produceItems(item, producedQty);
+        log.info("📈Items produced: {}, qty = {} ", item.getName(), producedQty);
     }
 
     public void startOrResumeItemsProduction(Item item) {
@@ -86,24 +88,32 @@ public class ManufacturingService {
 
 
     public void suspendItemsProduction(Item item) {
-        ProcessInstance processInstance = null;
+        final String businessKey = item.getName();
         try {
-            processInstance = runtimeService
-                    .createProcessInstanceQuery()
-                    .processInstanceBusinessKey(item.getName())
+            Execution subscribedExecution = runtimeService.createExecutionQuery()
+                    .processInstanceBusinessKey(businessKey)
+                    .messageEventSubscriptionName(MAN_SUSPEND_MESSAGE)
                     .singleResult();
+
+            if (subscribedExecution == null) {
+                log.warn("Manufacturing: no '{}' message subscription found for item {}"
+                        , MAN_SUSPEND_MESSAGE, businessKey);
+                return;
+            }
+
+            runtimeService.messageEventReceived(MAN_SUSPEND_MESSAGE, subscribedExecution.getId());
+            log.debug("Manufacturing: '{}' delivered to execution {} (item: {})",
+                    MAN_SUSPEND_MESSAGE, subscribedExecution.getId(), businessKey);
+
         } catch (FlowableException e) {
-            log.info("Manufacturing: Query return 2 results instead of max 1. Item: {}", item.getName());
-            return;
-        }
-        if (processInstance != null) {
-            runtimeService
-                    .messageEventReceived(MAN_SUSPEND_MESSAGE, processInstance.getId());
+            log.error("Manufacturing: multiple '{}' subscriptions found for item {}. Refine correlation (add activityId, tenantId or extra vars).",
+                    MAN_SUSPEND_MESSAGE, businessKey, e);
         }
     }
 
     public void terminateAllItemsProduction() {
         runtimeService.signalEventReceived(MAN_STOP_SIGNAL);
+        log.debug("Manufacturing: '{}' terminated", MAN_STOP_SIGNAL);
     }
 
     public Map<String, ManufacturingProcessStatus> getManufacturingProcessesStatus() {
@@ -150,4 +160,9 @@ public class ManufacturingService {
     }
 
 
+    public void startAll(List<Item> items) {
+        for (Item item : items) {
+            startOrResumeItemsProduction(item);
+        }
+    }
 }

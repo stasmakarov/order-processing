@@ -10,6 +10,7 @@ import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.eventsubscription.api.EventSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,84 +39,80 @@ public class DeliveryService {
     @Autowired
     private AppSettings appSettings;
 
-    @Transactional
-    public List<Order> getOrdersWaitingDelivery() {
-        systemAuthenticator.begin("admin");
-        try {
-            List<Order> orders = dataManager.load(Order.class)
-                    .query("select e from ord_Order e where e.status = :status")
-                    .parameter("status", OrderStatus.READY)
-                    .list();
-            log.info("Getting orders for delivery");
-            return orders != null ? orders : Collections.emptyList();
-        } catch (Exception e) {
-            log.error("Error while retrieving orders for delivery", e);
-            return Collections.emptyList();
-        } finally {
-            systemAuthenticator.end();
-        }
-    }
-
-    @Transactional
-    public String createDelivery(List<Order> orders) {
-        systemAuthenticator.begin("admin");
-        try {
-            SaveContext saveContext = new SaveContext();
-            Delivery delivery = dataManager.create(Delivery.class);
-            delivery.setNumber("DEL-" + numeratorService.getNext("delivery").toString());
-            delivery.setTimestamp(now());
-            saveContext.saving(delivery);
-            dataManager.save(saveContext);
-            return delivery.getNumber();
-        } finally {
-            systemAuthenticator.end();
-        }
-    }
 
     public void startDeliveryProcess() {
-        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
-        int randomValue = random.nextInt(10, maxDelayTimer);
-        Map<String, Object> params = new HashMap<>();
-        params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
-        runtimeService.startProcessInstanceByMessage(START_DELIVERY, params);
-        log.info("Delivery process started");
-    }
-
-    public void setBusinessKey(String deliveryNumber, DelegateExecution execution) {
-        String processInstanceId = execution.getProcessInstanceId();
+        List<UUID> orderIds;
         systemAuthenticator.begin("admin");
         try {
-            runtimeService.updateBusinessKey(processInstanceId, deliveryNumber);
+            orderIds = dataManager.loadValue(
+                            "select e.id from ord_Order e where e.status = :status", UUID.class)
+                    .parameter("status", OrderStatus.READY)
+                    .list();
         } finally {
             systemAuthenticator.end();
         }
-    }
 
-    public void performDelivery(String deliveryNumber) {
-        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
-        int delay = random.nextInt(10, maxDelayTimer);
-        try {
-            Thread.sleep(1000L * delay);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        if (orderIds.isEmpty()) {
+            log.warn("No orders ready for delivery");
+            return;
         }
-        System.out.println("Delivery has completed: " + deliveryNumber);
+        Integer maxDelayTimer = appSettings.load(OrderProcessingSettings.class).getMaxDelayTimer();
+        int randomValue = random.nextInt(10, maxDelayTimer);
+
+        String businessKey = "DEL" + numeratorService.getNext("delivery").toString();
+        Map<String, Object> params = new HashMap<>();
+        params.put("deliveryTimer", Iso8601Converter.convertSecondsToDuration(randomValue));
+        params.put("orderIds", orderIds);
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByMessage(START_DELIVERY, businessKey, params);
+        if (instance != null) {
+            log.info("🚚 Delivery process started");
+        } else {
+            log.error("🤷🏻‍♂️ Delivery process failed");
+        }
     }
 
     @Transactional
-    private Delivery getDeliveryByNumber(String deliveryNumber) {
+    public List<Order> createDelivery(List<UUID> orderIds, DelegateExecution execution) {
+
         systemAuthenticator.begin("admin");
         try {
-            return dataManager.load(Delivery.class)
-                    .query("select e from ord_Delivery e where e.number = :number")
-                    .parameter("number", deliveryNumber)
-                    .one();
-        } catch (Exception ignored) {
-            log.error("Delivery not found for number: {}", deliveryNumber);
+            var orders = dataManager.load(com.company.orderprocessing.entity.Order.class)
+                    .query("select e from ord_Order e where e.id in :ids")
+                    .parameter("ids", orderIds)
+                    .list();
+
+            if (orders.isEmpty()) {
+                log.warn("No orders found for ids: {}", orderIds);
+                return null;
+            }
+
+            SaveContext saveContext = new SaveContext();
+
+            Delivery delivery = dataManager.create(Delivery.class);
+            delivery.setTimestamp(java.time.LocalDateTime.now());
+            delivery.setProcessInstanceId(execution.getProcessInstanceId());
+            delivery.setNumber(execution.getProcessInstanceBusinessKey());
+
+            for (Order order : orders) {
+                order.setDelivery(delivery);
+                saveContext.saving(order);
+            }
+
+            saveContext.saving(delivery);
+            dataManager.save(saveContext);
+
+            log.info("Delivery #{} created, {} orders attached", delivery.getNumber(), orders.size());
+
+            return orders;
         } finally {
             systemAuthenticator.end();
         }
-        return null;
+    }
+
+    public void performDelivery(DelegateExecution execution) {
+
+        System.out.println("🛵 Delivery has completed: " + execution.getProcessInstanceBusinessKey());
     }
 
     public void sendMessage(Order order, String messageName) {
@@ -123,7 +120,7 @@ public class DeliveryService {
         systemAuthenticator.begin("admin");
         try {
             if (processInstanceId != null) {
-                EventSubscription subscription = null;
+                EventSubscription subscription;
                 try {
                     subscription = runtimeService.createEventSubscriptionQuery()
                             .processInstanceId(processInstanceId)

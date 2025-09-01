@@ -10,6 +10,7 @@ public enum OrderStatus implements EnumClass<Integer> {
 
     NEW(10),
     VERIFIED(20),
+    OUT_OF_ZONE(25),
     READY(30),
     IN_DELIVERY(40),
     COMPLETED(50),

@@ -6,11 +6,9 @@ import com.company.orderprocessing.app.ManufacturingService;
 import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.entity.Item;
 import com.company.orderprocessing.entity.ManufacturingProcessStatus;
-import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.entity.OrderStatus;
 import com.company.orderprocessing.event.*;
 import com.company.orderprocessing.rabbit.RabbitService;
-import com.company.orderprocessing.util.Iso8601Converter;
 import com.company.orderprocessing.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -18,10 +16,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
-import io.jmix.appsettings.AppSettings;
 import io.jmix.chartsflowui.component.Chart;
 import io.jmix.chartsflowui.data.item.MapDataItem;
 import io.jmix.chartsflowui.kit.component.model.DataSet;
@@ -32,12 +28,8 @@ import io.jmix.flowui.Notifications;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.kit.component.button.JmixButton;
-import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
-import org.flowable.engine.RuntimeService;
-import org.flowable.engine.runtime.ProcessInstance;
-import org.flowable.eventsubscription.api.EventSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,20 +113,6 @@ public class ControlPanelView extends StandardView {
         }
         totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
     }
-
-//private void countItems() {
-//        List<OrderStatus> sortedStatuses = Arrays.stream(OrderStatus.values())
-//                .sorted(comparingInt(OrderStatus::getId)).toList();
-//
-//        for (OrderStatus status : sortedStatuses) {
-//            long count = dataManager.loadValue(
-//                            "select count(e) from ord_Item e where e.status = :status", Long.class)
-//                    .parameter("status", status.getId())
-//                    .one();
-//            orders.put(status.name(), count);
-//        }
-//        totalOrders = dataManager.loadValue("select count(e) from ord_Order e", Long.class).one();
-//    }
 
     private ListChartItems<MapDataItem> getOrderCountersMap() {
         ListChartItems<MapDataItem> mapChartItems = new ListChartItems<>();
@@ -229,8 +207,13 @@ public class ControlPanelView extends StandardView {
     }
 
     @EventListener
-    private void onRefreshEvent(RefreshViewEvent event) {
+    private void onRefreshEvent(RefreshOrderViewEvent event) {
         updateOrdersChart();
+        updateItemsChart();
+    }
+
+    @EventListener
+    private void onRefreshItemsEvent(RefreshItemsEvent event) {
         updateItemsChart();
     }
 
@@ -256,6 +239,7 @@ public class ControlPanelView extends StandardView {
         resetService.purgeQueues();
         updateItemsChart();
         updateOrdersChart();
+        manufacturingStatusUpdate();
         log.info("🟥Application reset");
     }
 
@@ -284,7 +268,7 @@ public class ControlPanelView extends StandardView {
     private void updateButton(Button button, ManufacturingProcessStatus status) {
         button.getStyle().clear();
         switch (status) {
-            case PRODUCTION -> { button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);}
+            case PRODUCTION -> { button.addThemeVariants(ButtonVariant.LUMO_SUCCESS);}
             case SUSPENDED -> { button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);}
             case NOT_STARTED -> { button.addThemeVariants(ButtonVariant.LUMO_TERTIARY); }
         }
@@ -299,6 +283,25 @@ public class ControlPanelView extends StandardView {
     @Subscribe(id = "stopEngineBtn", subject = "clickListener")
     public void onStopEngineBtnClick(final ClickEvent<JmixButton> event) {
         flowableEngineManager.stopEngine();
+    }
+
+    @Subscribe(id = "stopAllButton", subject = "clickListener")
+    public void onStopAllButtonClick(final ClickEvent<JmixButton> event) {
+        manufacturingService.terminateAllItemsProduction();
+        notifications.create("All manufacturing process instances terminated")
+                .withType(Notifications.Type.SUCCESS)
+                .show();
+        manufacturingStatusUpdate();
+    }
+
+    @Subscribe(id = "startAllButton", subject = "clickListener")
+    public void onStartAllButtonClick(final ClickEvent<JmixButton> event) {
+        List<Item> items = dataManager.load(Item.class).all().list();
+        manufacturingService.startAll(items);
+        notifications.create("All manufacturing process instances started")
+                .withType(Notifications.Type.SUCCESS)
+                .show();
+        manufacturingStatusUpdate();
     }
 
 }

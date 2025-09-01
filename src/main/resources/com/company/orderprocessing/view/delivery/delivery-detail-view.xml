@@ -29,14 +29,16 @@
             </responsiveSteps>
             <textField id="numberField" property="number"/>
             <dateTimePicker id="timestampField" property="timestamp"/>
+            <textField id="processInstanceIdField" property="processInstanceId"/>
         </formLayout>
         <h4 text="msg://com.company.orderprocessing.entity/Delivery.orders"/>
-        <hbox id="buttonsPanel" classNames="buttons-panel">
+        <hbox id="buttonsPanel" classNames="buttons-panel" visible="false">
             <button action="ordersDataGrid.create"/>
             <button action="ordersDataGrid.edit"/>
             <button action="ordersDataGrid.remove"/>
         </hbox>
-        <dataGrid id="ordersDataGrid" dataContainer="ordersDc" width="100%" minHeight="20em">
+        <dataGrid id="ordersDataGrid" dataContainer="ordersDc"
+                  width="100%" minHeight="10em">
             <actions>
                 <action id="create" type="list_create">
                     <properties>
@@ -54,11 +56,9 @@
                 <column property="number"/>
                 <column property="customer"/>
                 <column property="address"/>
+                <column property="item"/>
                 <column property="quantity"/>
                 <column property="status"/>
-                <column property="location"/>
-                <column property="processInstanceId"/>
-                <column property="item"/>
             </columns>
         </dataGrid>
         <hbox id="detailActions">

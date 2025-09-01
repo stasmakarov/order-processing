@@ -8,12 +8,10 @@
                     class="com.company.orderprocessing.entity.Order">
             <fetchPlan extends="_base">
                 <property name="item">
-<!--                    <property name="name"/>-->
-<!--                    <property name="description"/>-->
-<!--                    <property name="available"/>-->
                     <property name="reserved"/>
                     <property name="delivered"/>
                 </property>
+                <property name="delivery" fetchPlan="_base"/>
             </fetchPlan>
             <loader id="ordersDl" readOnly="true">
                 <query>
@@ -21,6 +19,11 @@
                 </query>
             </loader>
         </collection>
+        <keyValueCollection id="boundsDc">
+            <properties>
+                <property name="geometry" class="org.locationtech.jts.geom.Polygon"/>
+            </properties>
+        </keyValueCollection>
     </data>
     <facets>
         <dataLoadCoordinator auto="true"/>
@@ -44,6 +47,7 @@
                     <vbox>
                         <hbox>
                             <button id="editButton" action="ordersDataGrid.edit" visible="true"/>
+                            <button id="cancelButton" text="msg://cancel.order"/>
                         </hbox>
                         <hbox>
                             <simplePagination id="pagination" visible="false"
@@ -86,20 +90,18 @@
                         </maps:tile>
                         <maps:vector id="ordersLayer">
 <!--                            <maps:cluster id="cluster">-->
-                                <maps:dataVectorSource id="dataVectorSource1" featureSelectEnabled="true"
+                                <maps:dataVectorSource id="dataVectorSource1"
+                                                       featureSelectEnabled="true"
                                                        dataContainer="ordersDc"
                                                        property="location"/>
 <!--                            </maps:cluster>-->
                         </maps:vector>
+                        <maps:vector id="boundsLayer">
+                            <maps:dataVectorSource id="boundsSource"
+                                                   dataContainer="boundsDc"
+                                                   property="geometry"/>
+                        </maps:vector>
                     </maps:layers>
-                    <!-- Define the boundaries for Moscow -->
-                    <maps:mapView centerX="37.617664"
-                                  centerY="55.752121">
-                        <maps:extent minX="36.9615"
-                                     minY="55.2290"
-                                     maxX="38.2529"
-                                     maxY="56.0823"/>
-                    </maps:mapView>
                 </maps:geoMap>
             </vbox>
         </split>

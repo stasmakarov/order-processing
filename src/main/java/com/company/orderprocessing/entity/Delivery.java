@@ -1,7 +1,7 @@
 package com.company.orderprocessing.entity;
 
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
-import io.jmix.core.metamodel.annotation.Composition;
+import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 
@@ -18,12 +18,15 @@ public class Delivery {
     @Id
     private UUID id;
 
+    @InstanceName
     @Column(name = "NUMBER_")
     private String number;
 
-    @Composition
     @OneToMany(mappedBy = "delivery")
     private List<Order> orders;
+
+    @Column(name = "PROCESS_INSTANCE_ID")
+    private String processInstanceId;
 
     @Column(name = "TIMESTAMP_")
     private LocalDateTime timestamp;
@@ -31,6 +34,14 @@ public class Delivery {
     @Column(name = "VERSION", nullable = false)
     @Version
     private Integer version;
+
+    public String getProcessInstanceId() {
+        return processInstanceId;
+    }
+
+    public void setProcessInstanceId(String processInstanceId) {
+        this.processInstanceId = processInstanceId;
+    }
 
     public Integer getVersion() {
         return version;

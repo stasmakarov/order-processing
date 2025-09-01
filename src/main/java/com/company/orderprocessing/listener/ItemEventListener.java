@@ -5,27 +5,25 @@ import com.company.orderprocessing.entity.Item;
 import com.company.orderprocessing.entity.OrderProcessingSettings;
 import com.company.orderprocessing.event.ItemsProducedEvent;
 import com.company.orderprocessing.event.ItemsSuspendedEvent;
-import com.company.orderprocessing.util.Iso8601Converter;
+import com.company.orderprocessing.event.RefreshItemsEvent;
 import io.jmix.appsettings.AppSettings;
 import io.jmix.core.DataManager;
 import io.jmix.core.Id;
 import io.jmix.core.event.EntityChangedEvent;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.UiEventPublisher;
-import org.flowable.engine.ManagementService;
-import org.flowable.engine.RuntimeService;
-import org.flowable.engine.runtime.ProcessInstance;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Component("cst_ItemEventListener")
 public class ItemEventListener {
+
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ItemEventListener.class);
 
     @Autowired
     private DataManager dataManager;
@@ -39,34 +37,75 @@ public class ItemEventListener {
     private ManufacturingService manufacturingService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener
-    public void onItemChangedBeforeCommit(final EntityChangedEvent<Item> event) {
-        OrderProcessingSettings settings = appSettings.load(OrderProcessingSettings.class);
-        Integer minItemsAvailable = settings.getMinItemsAvailable();
-        Integer initialItemQuantity = settings.getInitialItemQuantity();
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void onItemChangedBeforeCommit(EntityChangedEvent<Item> event) {
+        if (event.getType() != EntityChangedEvent.Type.UPDATED) return;
+        if (!event.getChanges().isChanged("available") && !event.getChanges().isChanged("reserved")) return;
 
         systemAuthenticator.begin("admin");
         try {
             Id<Item> entityId = event.getEntityId();
             Item item = dataManager.load(entityId).one();
 
-            if (item.getAvailable() < minItemsAvailable) {
-                manufacturingService.startOrResumeItemsProduction(item);
-                uiEventPublisher.publishEvent(new ItemsProducedEvent(this, item));
-            }
 
-            if (item.getAvailable() > initialItemQuantity) {
-                manufacturingService.suspendItemsProduction(item);
-                uiEventPublisher.publishEvent(new ItemsSuspendedEvent(this, item));
-            }
+            int available = nvl(item.getAvailable());
+            int reserved = nvl(item.getReserved());
 
-            Integer reserved = item.getReserved();
+
+// Basic invariant check (do not mutate state here)
             if (reserved < 0) {
-                System.out.println("reservation error");
+                log.warn("Item {} has negative reserved={} before commit", item.getId(), reserved);
+            }
+
+            OrderProcessingSettings settings = appSettings.load(OrderProcessingSettings.class);
+            Integer minItemsAvailable = settings.getMinItemsAvailable();
+            Integer initialItemQuantity = settings.getInitialItemQuantity();
+            if (minItemsAvailable == null) minItemsAvailable = 0;
+            if (initialItemQuantity == null) initialItemQuantity = Integer.MAX_VALUE;
+
+
+// Use mutually exclusive conditions to avoid double triggers
+            if (available < minItemsAvailable) {
+                manufacturingService.startOrResumeItemsProduction(item);
+            } else if (available > initialItemQuantity) {
+                manufacturingService.suspendItemsProduction(item);
             }
         } finally {
             systemAuthenticator.end();
         }
     }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onItemChangedAfterCommit(EntityChangedEvent<Item> event) {
+        if (event.getType() != EntityChangedEvent.Type.UPDATED) return;
+        if (!event.getChanges().isChanged("available") && !event.getChanges().isChanged("reserved")) return;
+
+
+        systemAuthenticator.begin("admin");
+        try {
+            Item item = dataManager.load(event.getEntityId()).one();
+
+
+            int available = nvl(item.getAvailable());
+            OrderProcessingSettings settings = appSettings.load(OrderProcessingSettings.class);
+            Integer minItemsAvailable = settings.getMinItemsAvailable();
+            Integer initialItemQuantity = settings.getInitialItemQuantity();
+            if (minItemsAvailable == null) minItemsAvailable = 0;
+            if (initialItemQuantity == null) initialItemQuantity = Integer.MAX_VALUE;
+
+
+            if (available < minItemsAvailable) {
+                uiEventPublisher.publishEvent(new ItemsProducedEvent(this, item));
+            } else if (available > initialItemQuantity) {
+                uiEventPublisher.publishEvent(new ItemsSuspendedEvent(this, item));
+                uiEventPublisher.publishEvent(new RefreshItemsEvent(this));
+            }
+        } finally {
+            systemAuthenticator.end();
+        }
+    }
+
+    private static int nvl(Integer v) { return v == null ? 0 : v; }
 
 }

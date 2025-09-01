@@ -61,6 +61,7 @@
                     </responsiveSteps>
                     <textField id="numberField" property="number"/>
                     <dateTimePicker id="timestampField" property="timestamp"/>
+                    <textField id="processInstanceIdField" property="processInstanceId"/>
                 </formLayout>
                 <dataGrid id="ordersDataGrid" dataContainer="ordersDc" width="100%" minHeight="20em">
                     <actions>
@@ -83,7 +84,6 @@
                         <column property="status"/>
                     </columns>
                 </dataGrid>
-
                 <hbox id="detailActions">
                     <button id="saveButton" text="msg:///actions.Save" icon="CHECK" themeNames="primary"/>
                     <button id="cancelButton" text="msg:///actions.Cancel" icon="BAN"/>

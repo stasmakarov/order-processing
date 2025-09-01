@@ -2,6 +2,7 @@ package com.company.orderprocessing.view.item;
 
 import com.company.orderprocessing.app.ResetService;
 import com.company.orderprocessing.entity.Item;
+import com.company.orderprocessing.event.RefreshItemsEvent;
 import com.company.orderprocessing.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.HasValueAndElement;
@@ -17,6 +18,7 @@ import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.*;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
 
 @Route(value = "items", layout = MainView.class)
 @ViewController(id = "ord_Item.list")
@@ -135,5 +137,10 @@ public class ItemListView extends StandardListView<Item> {
         resetService.initItems();
         itemsDl.load();
         updateControls(false);
+    }
+
+    @EventListener
+    private void onRefreshEvent(RefreshItemsEvent event) {
+       itemDl.load();
     }
 }

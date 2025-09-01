@@ -26,7 +26,7 @@
                 <h4 text="Reset app" width="210px"/>
                 <button id="resetAppBtn" text="Reset" themeNames="error large"/>
             </vbox>
-            <vbox>
+            <vbox visible="false">
                 <h4 text="Manage BPM Engine"/>
                 <hbox>
                     <button id="startEngineBtn" text="Start" themeNames="primary large" width="5em"/>
@@ -35,7 +35,11 @@
             </vbox>
             <vbox>
                 <h3 text="Manufacturing"/>
-                <hbox id="manufacturingStatusBox" spacing="true"/>
+                <hbox>
+                    <hbox id="manufacturingStatusBox" spacing="true"/>
+                    <button id="startAllButton" text="msg://start.all" themeNames="warning"/>
+                    <button id="stopAllButton" text="msg://Stop all" themeNames="warning"/>
+                </hbox>
             </vbox>
         </hbox>
         <hbox>
@@ -46,7 +50,7 @@
             <vbox width="40em">
                 <h4 text="Orders by status"/>
                 <charts:chart id="ordersChart"
-                              colorPalette="BLUE LIMEGREEN YELLOW ORANGE PLUM SLATEGREY"
+                              colorPalette="BLUE LIMEGREEN GRAY YELLOW ORANGE PLUM SLATEGREY"
                               height="100%" minHeight="20em" width="25em"
                               alignSelf="BASELINE">
                     <charts:series>

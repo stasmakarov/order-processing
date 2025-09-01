@@ -13,6 +13,7 @@
                 <property name="status"/>
                 <property name="location"/>
                 <property name="processInstanceId"/>
+                <property name="delivery" fetchPlan="_base"/>
             </fetchPlan>
             <loader id="orderDl"/>
         </instance>
@@ -44,7 +45,13 @@
             <textField id="locationField" property="location"/>
             <textField id="processInstanceIdField" property="processInstanceId"/>
             <textField id="codeField" property="number"/>
-            </formLayout>
+            <entityPicker id="deliveryField" property="delivery">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+        </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveAction"/>
             <button id="closeButton" action="closeAction"/>
