@@ -34,7 +34,7 @@ public class OrderProcessingSettings extends AppSettingsEntity {
     @Column(name = "DELIVERY_PACKAGE")
     private Integer deliveryPackage;
 
-    @AppSettingsDefault("70")
+    @AppSettingsDefault("10")
     @Column(name = "PAYMENT_ERROR_PROBABILITY")
     private Integer paymentErrorProbability;
 

@@ -34,7 +34,7 @@ public class OrderService {
 
     private final static String START_MESSAGE_NAME = "Start order processing";
     private final static String RESERVATION_ERROR_CODE = "901";
-    private final static String VERIFICATION_ERROR_CPDE = "100";
+    private final static String VERIFICATION_ERROR_CODE = "100";
     private final Random random = new Random();
 
     @Autowired
@@ -233,7 +233,7 @@ public class OrderService {
                 systemAuthenticator.end();
             }
         } else {
-            throw new BpmnError(VERIFICATION_ERROR_CPDE);
+            throw new BpmnError(VERIFICATION_ERROR_CODE);
         }
     }
 

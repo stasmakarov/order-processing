@@ -1,0 +1,272 @@
+:experimental:
+
+:icons: font
+
+:source-highlighter: rouge
+
+== Event-Driven Development with Jmix BPM
+
+IMPORTANT: Before starting, several additional steps must be performed:
+
+- Start `RabbitMQ`:
+[source, bash]
+----
+docker run -d --hostname my-rabbit --name some-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+----
+- Start `order-processing`
+- Reset data in order-processing
+- Add 2 new numerators through the Numerators screen:
+** order - 0
+** delivery - 0
+- Start `customer-simulation`
+
+Contents: [[home]]
+
+* <<intro>>
+* <<diff>>
+* <<bpmnReview>>
+* <<what>>
+* <<demo>>
+
+=== Introduction to Event-Driven Architecture (EDA). [[intro]]
+
+IMPORTANT: Show slide *Plan*
+
+* Describe the agenda
+
+In this webinar, we will talk about the event-driven approach in development and business process automation. As we see on the slide — events surround us everywhere, the event-driven approach is often used in various solutions such as CRM, PRM, and others. BPM is no exception. There are many resources online with information and recommendations on using this approach in automation. Today we will try to understand these recommendations and apply them in practice using Jmix BPM.
+
+=== Differences between event-driven processes and linear ones. [[diff]]
+
+==== Linear processes:
+
+* Represent a sequential chain of actions, where each operation is executed strictly after the previous one.
+* Process management follows a fixed, predefined scenario.
+* The approach is similar to a production line (assembly line), where the task flow moves directly from start to finish.
+* Usually, there is no flexibility to change the order or react to external events during execution.
+* These processes are easier to model and understand but harder to adapt to changing conditions and unpredictable situations.
+* This approach is often used in classic BPM systems with strict regulations.
+
+==== Event-driven processes
+
+* Are controlled via events that can start, interrupt, or alter the course of the process.
+* The process is split into a set of event-linked stages interacting with each other.
+* Allows reacting to external and internal events in real time, providing flexibility and adaptability.
+* The approach uses a message exchange architecture (event-driven), where processes can interact concurrently and asynchronously.
+* Simplifies the handling of complex, variable, multi-user processes.
+* Used in modern automation systems focusing on integration and dynamic response.
+
+=== Overview of BPMN notation and its events. [[bpmnReview]]
+
+IMPORTANT: Slide: *BPMN*
+
+* Brief review of the slide, pay attention to events
+
+IMPORTANT: Slide: *Many events*
+
+Jmix BPM supports the most commonly used events. Events marked in red on the slide are not supported in Jmix, but their behavior can be fairly easily recreated using other notation elements.
+
+* Read the event classification from the slide
+
+Shaded events are sending events, unshaded - receiving.
+
+=== What we are going to build [[what]]
+
+IMPORTANT: Slide: *What we are going to build*
+
+In this webinar, we will build an application for online order processing. Actually, not just one application, but a whole system demonstrating the event-driven approach. We will receive orders from the website, process them, deliver to customers, and, if necessary, start production of new goods.
+
+* Describe the processes on the slide
+
+IMPORTANT: Slide: *Process from the analyst’s point of view*
+
+For business analysts, processes usually look linear
+
+* Describe the process on the slide
+
+IMPORTANT: Slide: *All processes today without user tasks*
+
+In this demo, there will be no direct interaction between processes and users. This doesn't mean users are excluded; rather, there is no direct work with process forms. The user can interact with the process without separate forms, using visual elements of the application itself — screens, buttons, etc. This allows seamless integration of automation into existing applications.
+
+IMPORTANT: Slide: *Inter-process interaction*
+
+One of the most important points in event-driven development, as in linear one, is inter-process interaction. Different parts of our process work differently. Departments probably have different schedules; orders arrive from the site individually, but are sent to delivery by schedule or when a certain volume accumulates, and so on.
+
+IMPORTANT: Slide: *What tools do we have*
+
+* Read from the slide
+
+=== Demo [[demo]]
+
+IMPORTANT: Slide: *Demo*
+
+We will have several main interacting modules
+
+Modules in our case are stored in separate repositories but may be assembled as a composite project for easier work with various applications.
+
+The first one is the website emulator. This application will periodically publish orders.
+
+* Show `ControlPanelView` on the screen, then in code
+
+All our activity starts on this screen, namely after pressing the Start button
+
+* Show the code for the button click event
+
+The first step is checking the availability of the RabbitMQ server; if unavailable - show a notification. Then initialization of the working order list happens. Upon successful initialization, we create an instance of `BackgroundTask` — `BackgroundOrdersStream`, and, using a special background task handler, start generating orders.
+
+* Show the `BackgroundOrdersStream` class
+
+Here we only have a constructor and a `run` method — the minimal implementation of a background task. In the method, we check the necessary task lifecycle states and simply create new instances of the `OrderDto` entity.
+
+* Show the `OrderDto` entity
+* Go to `OrderGenerator` class
+
+This service has one public method returning an instance of the DTO entity. As we can see from the code, almost all order data is randomly generated using additional app settings, which can be set and modified via the `Application Settings` extension.
+
+* Show the settings screen
+
+Here we can adjust various parameters of our application. For now, we won’t make any changes; we’ll return to them later if needed.
+
+Let’s go back to the order generator code. As we can see, the last call before returning the created instance is the publication of the application event `OrderGeneratedEvent` with the created instance passed. Let’s see who listens to it.
+
+* Show `OrderEventListener`
+
+When listening to the event, the code calls the method to send a message to `RabbitMQ` using the `MessageProducer` bean.
+
+* Show and explain sending to the queue
+
+We also publish a UI event to show the created orders on the screen.
+
+Let’s start generation and see what will be created
+
+* Start order generation
+
+As we see, orders start generating periodically. The screen uses another useful Jmix addition — Charts. With it, charts are drawn.
+
+So, the first step is done — we are creating orders. Next, we should somehow react to their creation in our second application — order-processing. Before that, we can look at the RabbitMQ admin and see how many orders are in the queue.
+
+* Open http://localhost:15672/
+* Log in with guest - guest
+
+As we see, orders begin to appear in the processing queue. Let’s look at the second application that will process them.
+
+In the second application, we also have a control panel.
+
+* Show `Control Panel` screen in Order Processing app
+
+Here we can start and stop processing the order queue, as well as reset all data in our application. Also, there is production management, but more about it later if time permits.
+
+* Press Read orders from RabbitMQ - Start
+
+Nothing happens. It’s time to go to the code and see how we will process incoming orders.
+
+* Show `ControlPanelView` controller
+
+There is quite a lot of code here, as we see. We are interested in the event listener for the start button press.
+
+As we see, pressing the button just starts the rabbitService, in which, at start, listeners for the queue containers are created. The code that directly reacts to the arrival of new orders in the queue is located in the `OrderMessageHandler` class.
+
+* Show class
+
+We only have one method here, annotated with `@RabbitListener`, and it is this method that receives messages from the queue. After receiving the message, a processing process is started based on it.
+
+[source, java]
+----
+orderService.startOrderProcess(json);
+----
+
+Let’s look closely at the method. Here we first encounter BPMN processes, finally.
+
+* Describe the `startOrderProcess` method up to the attempt to start the process.
+
+As we see in the console, by this time quite a few exceptions have already been thrown, all from this very method. They have a clear description — the process cannot be started on the message because there are no subscriptions for the passed message. This is correct behavior because there is not a single process on the server yet.
+
+* Show BPM application - Process definitions
+
+The processes for deployment were prepared in advance, let’s start with the very first of them, namely `order-processing.draft.bpmn`. In JmixBPMN there is a clear separation between process drafts and ready-to-deploy processes
+
+* Show folders, show `order-processing.draft.bpmn`
+* Describe process steps
+
+This process is the main and highest-level process - it calls all other processes in the order processing chain — address verification, product reservation and payment, and finally, product delivery to customers. Let’s deploy it on the server.
+
+* Deploy the `order-processing` process
+
+Now our process can be started and orders will begin to be processed. At the very beginning, an `Order` entity will be created, and all further work will be conducted with this instance — it is stored in the process variable.
+
+It is important to note that a separate process is started for each order, which can end in one of several ways — it may be canceled due to an incorrect address, or due to a payment error, or it may successfully complete with delivery to the user. What is also important is that the process is non-linear; it interacts with other processes using messages and signals.
+
+The next process to review and start is the order address verification process. Let’s look at it.
+
+* Open `address-verification.draft.bpmn`
+
+This process will verify the address. It is launched from the main process using a BPMN Call activity — a special task for calling subprocesses from the main process. The main process stops after calling the subprocess and waits for verification results.
+
+In the verification process, the first step is creating a process variable to track the maximum number of verification attempts, then sending the order for verification in a service task. After the task, there is an interesting element — the `Event based gateway` — a special gateway that may be associated with several different events. In our case, we see 3 events:
+
+- Timer — initiates a retry of verification after expiration
+- OK message — finishes verification upon receiving success message
+- Fake message — throws an exception and ends the process
+
+Besides, an exception and error completion can occur when the maximum number of attempts — 3 in our case — is exhausted.
+
+The invoked method does not perform verification; it just publishes the event, and verification is done in the listener class.
+
+* Show `AddressVerificator` and `RequestEventListener`, describe logic
+
+Thus, starting verification does not block the process itself, and the timer for the retry starts immediately.
+
+In our main process, we may get either a verification exception or a success signal. In the first case, we set the order status to "Incorrect address," and in the second case, we proceed by calling the reservation and payment subprocess. Let’s deploy the verification process.
+
+* Deploy the verification process
+
+Now let’s look at the reservation and payment process. It is launched similarly to the previous one — via Call activity. The result can be either an exception or normal continuation.
+
+* Show `reservation-and-payment.draft.bpmn`
+
+This process also has specific features; in particular, it includes compensation activity. The first step is trying to reserve the necessary products, and then, upon successful reservation, the process attempts to perform payment. Let’s look more closely at the service task implementations.
+
+* Show and explain the method `doReservation(Order order)` in the `OrderService` bean
+
+As we see, here reservation can be successful, or an exception may be thrown, or reservation may proceed successfully. Upon a positive result, a method of the same class will be called to simulate payment of the order with some probability of error.
+
+* Show and describe the method `simulatePayment(Order order)`
+
+The method, as we see, just checks for the occurrence of an error; no actual payment is made in our demo. When the simulation is successful, the entire reservation and payment process ends successfully, and control returns to the main parent process. Let’s deploy this process
+
+* Deploy `reservation-and-payment.bpmn`
+* Return to `order-processing.bpmn`
+
+Next, the main process sets the order status to READY — ready for delivery — and waits for a status change message from another process — the delivery process. Let’s look at its implementation.
+
+* Show the `delivery-process.bpmn` process
+
+As discussed earlier, the delivery process usually is not linear — we don’t send a vehicle with one order immediately after confirmation and payment. Instead, we typically wait until some number of orders accumulates or send orders on a schedule. In our example, sending is initiated precisely on the second scenario — the delivery process starts according to the Quartz schedule.
+
+At the beginning of the process, the `DeliveryService` method `startDeliveryProcess()` is called. This method is invoked from the Quartz Job.
+
+* Show Job, class and method
+
+Here we just collect all orders ready for shipment from the database, then launch the delivery process with the order list.
+
+* Describe the launch method in more detail
+
+After starting the process, an instance of the `Delivery` entity is created, associated with orders. Then the process publishes a message to all interested instances of main processes about the need to change the order status to IN_DELIVERY — during the delivery process, waits for some time (simulates delivery), and then writes the delivery result in a service task `Perform delivery`. After that, a new message is published about the status change to DELIVERED — delivered to the client.
+
+* Show the `confirmDelivery` method in the main order service.
+
+After that, the main process marks the order as completed and finishes. Let’s start the delivery process.
+
+* Deploy `delivery-process.bpmn`
+
+Great, now all related processes can finally start working together.
+
+* Show the operation of all processes, some orders should now complete successfully.
+
+=== Conclusion
+
+In this webinar, we got acquainted with the concept of event-driven development and its specific use in Jmix BPM. This approach enables building flexible, scalable, and adaptive business processes that can dynamically react to external and internal events.
+
+Using the example of an online store, a practical implementation of the event-driven approach was demonstrated: starting with order generation in one module and asynchronous processing in another, integrated through RabbitMQ. Complex interactions between processes were showcased, including Call Activity, Event Based Gateway, signal and message publishing, and retry mechanisms.
+
+=== Questions?

@@ -200,17 +200,11 @@ public class OrderListView extends StandardListView<Order> {
     }
 
     private void onGeoObjectClick(GeoObjectClickNotifier.GeoObjectClickEvent<Order> event) {
-        Order orderMarker = event.getItem();
+        Order orderSelected = event.getItem();
         DataGridItems<Order> items = ordersDataGrid.getItems();
-        if (items != null) {
-            Collection<Order> orders = items.getItems();
-            for (Order order : orders) {
-                if (order.getId().equals(orderMarker.getId())) {
-                    ordersDataGrid.getItems().setSelectedItem(order);
-                    break;
-                }
-            }
-        }
+        ordersDataGrid.select(orderSelected);
+//        ordersDataGrid.scrollToItem(orderSelected);
+
     }
 
     @EventListener

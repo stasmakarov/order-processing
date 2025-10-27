@@ -88,6 +88,11 @@
                         <maps:tile>
                             <maps:osmSource/>
                         </maps:tile>
+                        <maps:vector id="boundsLayer">
+                            <maps:dataVectorSource id="boundsSource"
+                                                   dataContainer="boundsDc"
+                                                   property="geometry"/>
+                        </maps:vector>
                         <maps:vector id="ordersLayer">
 <!--                            <maps:cluster id="cluster">-->
                                 <maps:dataVectorSource id="dataVectorSource1"
@@ -95,11 +100,6 @@
                                                        dataContainer="ordersDc"
                                                        property="location"/>
 <!--                            </maps:cluster>-->
-                        </maps:vector>
-                        <maps:vector id="boundsLayer">
-                            <maps:dataVectorSource id="boundsSource"
-                                                   dataContainer="boundsDc"
-                                                   property="geometry"/>
                         </maps:vector>
                     </maps:layers>
                 </maps:geoMap>
