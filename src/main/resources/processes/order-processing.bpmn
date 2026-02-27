@@ -9,7 +9,7 @@
     <messageFlow id="Flow_0zysn1k" sourceRef="Participant_0hr3zd4" targetRef="messege-order-delivered" />
     <messageFlow id="Flow_0xizhrq" sourceRef="Participant_0hr3zd4" targetRef="Event_13dk4k0" />
   </collaboration>
-  <process id="order-processing" name="[Object]" isExecutable="true">
+  <process id="order-processing" name="Order processing" isExecutable="true">
     <startEvent id="start-event-message" name="New order">
       <outgoing>Flow_1ya8f49</outgoing>
       <messageEventDefinition id="MessageEventDefinition_0s0wj44" messageRef="start-order-processing" />

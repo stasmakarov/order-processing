@@ -192,11 +192,6 @@ println "Counter: ${counter + 1}"
         <omgdi:waypoint x="520" y="168" />
         <omgdi:waypoint x="605" y="168" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1m3fqkx_di" bpmnElement="Flow_1m3fqkx">
-        <omgdi:waypoint x="630" y="143" />
-        <omgdi:waypoint x="630" y="60" />
-        <omgdi:waypoint x="702" y="60" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1p0md2k_di" bpmnElement="Flow_1p0md2k">
         <omgdi:waypoint x="655" y="168" />
         <omgdi:waypoint x="702" y="168" />
@@ -214,11 +209,6 @@ println "Counter: ${counter + 1}"
         <omgdi:waypoint x="738" y="168" />
         <omgdi:waypoint x="912" y="168" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_02p1irt_di" bpmnElement="Flow_02p1irt">
-        <omgdi:waypoint x="720" y="42" />
-        <omgdi:waypoint x="720" y="0" />
-        <omgdi:waypoint x="520" y="0" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1745bhs_di" bpmnElement="Flow_1745bhs">
         <omgdi:waypoint x="420" y="0" />
         <omgdi:waypoint x="270" y="0" />
@@ -233,7 +223,7 @@ println "Counter: ${counter + 1}"
         <omgdi:waypoint x="350" y="280" />
         <omgdi:waypoint x="420" y="280" />
         <bpmndi:BPMNLabel>
-          <omgdc:Bounds x="279" y="258" width="62" height="14" />
+          <omgdc:Bounds x="279" y="243" width="62" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0e40gcw_di" bpmnElement="Flow_0e40gcw">
@@ -247,6 +237,16 @@ println "Counter: ${counter + 1}"
       <bpmndi:BPMNEdge id="Flow_1riez5w_di" bpmnElement="Flow_1riez5w">
         <omgdi:waypoint x="880" y="280" />
         <omgdi:waypoint x="912" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02p1irt_di" bpmnElement="Flow_02p1irt">
+        <omgdi:waypoint x="720" y="42" />
+        <omgdi:waypoint x="720" y="0" />
+        <omgdi:waypoint x="520" y="0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1m3fqkx_di" bpmnElement="Flow_1m3fqkx">
+        <omgdi:waypoint x="630" y="143" />
+        <omgdi:waypoint x="630" y="60" />
+        <omgdi:waypoint x="702" y="60" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
